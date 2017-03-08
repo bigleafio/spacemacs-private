@@ -13,8 +13,11 @@
 
 ;;; Code:
 
-(configuration-layer/declare-layers 
-  '(org org-bullets org-journal restclient)
-)
+(defconst jsg-packages
+  '()
 
-;;; layers.el ends here
+(defun jsg/init-jsg ()
+   "Initialize my package"
+   (use-package org-bullets org-journal restclient))
+
+;;; packages.el ends here

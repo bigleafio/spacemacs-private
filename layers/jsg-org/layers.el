@@ -14,7 +14,7 @@
 ;;; Code:
 
 (configuration-layer/declare-layers 
-  '(org org-bullets org-journal restclient)
+  '(org)
 )
 
 ;;; layers.el ends here

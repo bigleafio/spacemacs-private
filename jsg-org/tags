@@ -1,9 +1,0 @@
-!_TAG_FILE_SORTED	2	/0=unsorted, 1=sorted, 2=foldcase/
-jsg-org-packages	/Users/Jason/.emacs.d/private/jsg-org/packages.el	/^(defconst jsg-org-packages$/;"	f	language:Lisp
-jsg-org/meeting-done	/Users/Jason/.emacs.d/private/jsg-org/funcs.el	/^(defun jsg-org\/meeting-done ()$/;"	f	language:Lisp
-jsg-org/meeting-notes	/Users/Jason/.emacs.d/private/jsg-org/funcs.el	/^(defun jsg-org\/meeting-notes ()$/;"	f	language:Lisp
-jsg-org/nolinum	/Users/Jason/.emacs.d/private/jsg-org/funcs.el	/^(defun jsg-org\/nolinum ()$/;"	f	language:Lisp
-jsg-packages	/Users/Jason/.emacs.d/private/jsg/packages.el	/^(defconst jsg-packages$/;"	f	language:Lisp
-jsg/meeting-done	/Users/Jason/.emacs.d/private/jsg/funcs.el	/^(defun jsg\/meeting-done ()$/;"	f	language:Lisp
-jsg/meeting-notes	/Users/Jason/.emacs.d/private/jsg/funcs.el	/^(defun jsg\/meeting-notes ()$/;"	f	language:Lisp
-jsg/nolinum	/Users/Jason/.emacs.d/private/jsg/funcs.el	/^(defun jsg\/nolinum ()$/;"	f	language:Lisp

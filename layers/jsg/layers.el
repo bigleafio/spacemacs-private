@@ -13,7 +13,8 @@
 
 ;;; Code:
 
-(defconst jsg-packages
-    '())
+(configuration-layer/declare-layers 
+  '(org)
+)
 
-;;; packages.el ends here
+;;; layers.el ends here

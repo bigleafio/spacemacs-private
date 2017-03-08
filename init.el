@@ -11,7 +11,7 @@
    dotspacemacs-configuration-layer-path '()
    dotspacemacs-configuration-layers
    '(
-     helm
+     ;;helm
      (auto-completion
       :variables
       auto-completion-enable-snippets-in-popup t
@@ -27,6 +27,7 @@
      go
      gtags
      imenu-list
+     ivy
      markdown
      (org :variables
         org-enable-github-support t)
@@ -36,15 +37,16 @@
      restclient
      (shell :variables shell-default-shell 'eshell)
      spell-checking
+     ;;smex
      syntax-checking
      themes-megapack
      version-control
      xkcd
     
-     jsg
+     jsg-org
      )
 
-   dotspacemacs-additional-packages '(autothemer org-bullets org-journal mode-icons dash dired-x flycheck-ycmd company-ycmd timesheet)
+    dotspacemacs-additional-packages '(autothemer org-bullets org-journal mode-icons timesheet)
     dotspacemacs-frozen-packages '()
     dotspacemacs-excluded-packages '()
     dotspacemacs-install-packages 'used-only))
@@ -240,6 +242,11 @@ values."
     (menu-bar-mode)
     (mode-icons-mode)
 
+    (setq ivy-use-virtual-buffers t)
+    (setq ivy-count-format "(%d/%d) ")
+    (setq magit-completing-read-function 'ivy-completing-read)
+    (setq projectile-completion-system 'ivy)
+
     )
 
 (custom-set-variables
@@ -264,12 +271,22 @@ This function is called at the very end of Spacemacs initialization."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
-)
+ '(package-selected-packages
+   (quote
+    (wgrep smex ivy-purpose ivy-hydra flyspell-correct-ivy counsel-projectile counsel swiper ivy dired+ zonokai-theme zenburn-theme zen-and-art-theme yapfify xterm-color xkcd ws-butler winum which-key volatile-highlights vi-tilde-fringe uuidgen use-package underwater-theme ujelly-theme twilight-theme twilight-bright-theme twilight-anti-bright-theme tronesque-theme toxi-theme toc-org timesheet tao-theme tangotango-theme tango-plus-theme tango-2-theme sunny-day-theme sublime-themes subatomic256-theme subatomic-theme spaceline spacegray-theme soothe-theme solarized-theme soft-stone-theme soft-morning-theme soft-charcoal-theme smyx-theme smeargle shell-pop seti-theme reverse-theme reveal-in-osx-finder restclient-helm restart-emacs rainbow-delimiters railscasts-theme pyvenv pytest pyenv-mode py-isort purple-haze-theme professional-theme popwin planet-theme pip-requirements phoenix-dark-pink-theme phoenix-dark-mono-theme persp-mode pcre2el pbcopy pastels-on-dark-theme paradox pandoc-mode ox-pandoc ox-gfm osx-trash osx-dictionary orgit organic-green-theme org-projectile org-present org-pomodoro org-download org-bullets open-junk-file omtose-phellack-theme oldlace-theme occidental-theme obsidian-theme ob-restclient ob-http noctilux-theme niflheim-theme neotree naquadah-theme mustang-theme multi-term move-text monokai-theme monochrome-theme molokai-theme moe-theme mode-icons mmm-mode minimal-theme material-theme markdown-toc majapahit-theme magit-gitflow madhat2r-theme macrostep lush-theme lorem-ipsum live-py-mode linum-relative link-hint light-soap-theme launchctl jbeans-theme jazz-theme ir-black-theme inkpot-theme info+ indent-guide hy-mode hungry-delete htmlize hl-todo highlight-parentheses highlight-numbers highlight-indentation hide-comnt heroku-theme hemisu-theme help-fns+ helm-themes helm-swoop helm-pydoc helm-purpose helm-projectile helm-mode-manager helm-make helm-gtags helm-gitignore helm-flx helm-descbinds helm-company helm-c-yasnippet helm-ag hc-zenburn-theme gruvbox-theme gruber-darker-theme grandshell-theme gotham-theme google-translate golden-ratio go-guru go-eldoc gnuplot gmail-message-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link git-gutter-fringe git-gutter-fringe+ gh-md ggtags gandalf-theme fuzzy flyspell-correct-helm flymd flycheck-ycmd flycheck-pos-tip flx-ido flatui-theme flatland-theme firebelly-theme fill-column-indicator farmhouse-theme fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-search-highlight-persist evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-magit evil-lisp-state evil-indent-plus evil-iedit-state evil-exchange evil-escape evil-ediff evil-args evil-anzu eval-sexp-fu espresso-theme eshell-z eshell-prompt-extras esh-help elisp-slime-nav edit-server dumb-jump dracula-theme dockerfile-mode docker django-theme diff-hl darktooth-theme darkokai-theme darkmine-theme darkburn-theme dakrone-theme cython-mode cyberpunk-theme company-ycmd company-statistics company-restclient company-quickhelp company-go company-anaconda column-enforce-mode color-theme-sanityinc-tomorrow color-theme-sanityinc-solarized clues-theme clean-aindent-mode cherry-blossom-theme busybee-theme bubbleberry-theme birds-of-paradise-plus-theme badwolf-theme auto-yasnippet auto-highlight-symbol auto-dictionary auto-compile apropospriate-theme anti-zenburn-theme ample-zen-theme ample-theme alect-themes aggressive-indent afternoon-theme adaptive-wrap ace-window ace-link ace-jump-helm-line ac-ispell))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- )
+ '(org-document-title ((t (:inherit default :weight bold :foreground "#c5c8c6" :font "Lucida Grande" :height 1.5 :underline nil))))
+ '(org-level-1 ((t (:inherit default :weight bold :foreground "#c5c8c6" :font "Lucida Grande" :height 1.5))))
+ '(org-level-2 ((t (:inherit default :weight bold :foreground "#c5c8c6" :font "Lucida Grande" :height 1.35))))
+ '(org-level-3 ((t (:inherit default :weight bold :foreground "#c5c8c6" :font "Lucida Grande" :height 1.25))))
+ '(org-level-4 ((t (:inherit default :weight bold :foreground "#c5c8c6" :font "Lucida Grande" :height 1.1))))
+ '(org-level-5 ((t (:inherit default :weight bold :foreground "#c5c8c6" :font "Lucida Grande"))))
+ '(org-level-6 ((t (:inherit default :weight bold :foreground "#c5c8c6" :font "Lucida Grande"))))
+ '(org-level-7 ((t (:inherit default :weight bold :foreground "#c5c8c6" :font "Lucida Grande"))))
+ '(org-level-8 ((t (:inherit default :weight bold :foreground "#c5c8c6" :font "Lucida Grande")))))
 )
 
