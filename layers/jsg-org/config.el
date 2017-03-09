@@ -46,6 +46,18 @@
   (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
   (set-face-attribute 'org-table nil :inherit 'fixed-pitch)
   (add-hook 'markdown-mode-hook (lambda () (variable-pitch-mode t)))
+
+  '(org-document-title ((t (:inherit default :weight bold :foreground "#c5c8c6" :font "Fira Code" :height 1.5 :underline nil))))
+  '(org-level-1 ((t (:inherit default :weight bold :foreground "#c5c8c6" :font "Fira Code" :height 1.5))))
+  '(org-level-2 ((t (:inherit default :weight bold :foreground "#c5c8c6" :font "Fira Code" :height 1.35))))
+  '(org-level-3 ((t (:inherit default :weight bold :foreground "#c5c8c6" :font "Fira Code" :height 1.25))))
+  '(org-level-4 ((t (:inherit default :weight bold :foreground "#c5c8c6" :font "Fira Code" :height 1.1))))
+  '(org-level-5 ((t (:inherit default :weight bold :foreground "#c5c8c6" :font "Fira Code"))))
+  '(org-level-6 ((t (:inherit default :weight bold :foreground "#c5c8c6" :font "Fira Code"))))
+  '(org-level-7 ((t (:inherit default :weight bold :foreground "#c5c8c6" :font "Fira Code"))))
+  '(org-level-8 ((t (:inherit default :weight bold :foreground "#c5c8c6" :font "Fira Code"))))
+
+
   (add-hook 'org-mode-hook (lambda () (variable-pitch-mode t)))
 
   (setq org-default-notes-file (concat (file-name-as-directory org-directory) "notes.org"))
@@ -53,5 +65,5 @@
   (setq org-confirm-babel-evaluate t)
   (add-hook 'emacs-lisp-mode-hook 'outline-minor-mode)
 
-  ) 
+  )
 ;;; config.el ends here
