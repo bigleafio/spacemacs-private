@@ -41,7 +41,7 @@
                         '(("^ +\\([-*]\\) "
                          (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
 
-  (setq org-ellipsis "⬎")
+  ;;(setq org-ellipsis "⬎")
 
   (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
   (set-face-attribute 'org-table nil :inherit 'fixed-pitch)
