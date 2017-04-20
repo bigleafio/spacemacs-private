@@ -15,5 +15,4 @@
 
 (defconst jsg-org-packages
     '())
-
 ;;; packages.el ends here
