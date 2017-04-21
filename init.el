@@ -70,7 +70,6 @@ values."
                                       focus
                                       keyfreq
                                       org-sticky-header
-                                      (taskpaper-mode :location (recipe :fetcher github :repo "al3xandru/taskpaper-mode" :branch dev))
      )
    ;; A list of packages that cannot be updated.
    dotspacemacs-frozen-packages '()
