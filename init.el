@@ -151,7 +151,7 @@ values."
    ;; Default font, or prioritized list of fonts. `powerline-scale' allows to
    ;; quickly tweak the mode-line size to make separators look not too crappy.
    dotspacemacs-default-font '("Consolas"
-                               :size 12
+                               :size 14
                                :weight normal
                                :width normal
                                :powerline-scale 1.1)
@@ -330,7 +330,8 @@ you should place your code here."
   ;;;;
   ;; Customization
   ;;;;
-
+  (setq user-full-name "Jason Graham"
+        user-mail-address "jgraham20@gmail.com")
   ;; Add a directory to our load path so that when you `load` things
   ;; below, Emacs knows where to look for the corresponding file.
   (add-to-list 'load-path "~/.spacemacs.d/local/")
@@ -352,7 +353,7 @@ you should place your code here."
   (load "elisp-editing.el")
   )
 
-;; Do not write anything past this comment. This is where Emacs will
+;; Do not write anything past this comment. This is where Emacs wi ll
 ;; auto-generate custom variable definitions.
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
