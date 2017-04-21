@@ -1,3 +1,4 @@
+
 ;; -*- mode: emacs-lisp -*-
 ;; This file is loaded by Spacemacs at startup.
 ;; It must be stored in your home directory.
@@ -70,6 +71,7 @@ values."
                                       focus
                                       keyfreq
                                       org-sticky-header
+                                      org-plus-contrib
      )
    ;; A list of packages that cannot be updated.
    dotspacemacs-frozen-packages '()
