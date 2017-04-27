@@ -197,6 +197,10 @@ SCHEDULED: %t
 :PROPERTIES:
 :ID:       %(shell-command-to-string \"uuidgen\"):CREATED:  %U
 :END:" :prepend t)
+      ("J" "Journal entry with date" plain
+         (file+datetree+prompt "~/doc/journal.org")
+         "%K - %a\n%i\n%?\n"
+         :unnarrowed t)
      ("t" "Add Task" entry
       (file+headline "~/doc/tasks/todo.org" "Inbox")
       "* TODO %?
@@ -344,7 +348,7 @@ SCHEDULED: %t
  '(org-velocity-capture-templates
 (quote
  (("v" "Velocity" entry
-   (file "~/doc/tasks/notes.txt")
+   (file "~/doc/tasks/notes.org")
    "* NOTE %:search
 %i%?
 :PROPERTIES:

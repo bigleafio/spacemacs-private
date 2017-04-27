@@ -12,9 +12,9 @@ Effort should act as a multiplier on the value."
   (interactive)
   (setq org-categories-pending-hashmap (make-hash-table :test 'equal)
         org-categories-completed-hashmap (make-hash-table :test 'equal))
-  (dolist (file '("todo.txt" "archive.txt"))
+  (dolist (file '("todo.org" "archive.org"))
     (with-current-buffer
-        (find-file-noselect (expand-file-name file "~/Documents"))
+        (find-file-noselect (expand-file-name file "~/doc"))
       (save-excursion
         (goto-char (point-min))
         (while (not (eobp))

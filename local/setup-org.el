@@ -1,615 +1,736 @@
-;; The following lines are always needed.  Choose your own keys.
-(add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode))
-(add-hook 'org-mode-hook 'turn-on-font-lock) ; not needed when global-font-lock-mode is on
-(setq org-default-notes-file "~/Dropbox/org-life/notes.org")
-(global-set-key "\C-cc" 'org-capture)
-(global-set-key "\C-cl" 'org-store-link)
-(global-set-key "\C-ca" 'org-agenda)
-(global-set-key "\C-cb" 'org-iswitchb)
-(setq org-indent-mode t)
+;;;_ , Org-mode
 
-(defun my/org-contacts-template-email (&optional return-value)
-  "Try to return the contact email for a template.
-  If not found return RETURN-VALUE or something that would ask the user."
-  (or (cadr (if (gnus-alive-p)
-                (gnus-with-article-headers
-                  (mail-extract-address-components
-                  (or (mail-fetch-field "Reply-To") (mail-fetch-field "From") "")))))
-      return-value
-      (concat "%^{" org-contacts-email-property "}p")))
+(require 'cl)
+(require 'use-package)
 
+(load "org-settings")
+(load "org-smart-capture")
 
-(defvar my/org-basic-task-template "* TODO %^{Task}
-:PROPERTIES:
-:Effort: %^{effort|1:00|0:05|0:15|0:30|2:00|4:00}
-:END:
-Captured %<%Y-%m-%d %H:%M>
-%?
+(require 'org)
+(require 'org-agenda)
+(require 'org-crypt)
+(require 'org-bbdb)
+(require 'ob-python)
+(require 'ob-ruby)
+(require 'ob-emacs-lisp)
+(require 'ob-haskell)
+(require 'ob-sh)
+(require 'ox-md)
 
-%i
-" "Basic task data")
+(defconst my-org-soft-red    "#fcebeb")
+(defconst my-org-soft-orange "#fcf5eb")
+(defconst my-org-soft-yellow "#fcfceb")
+(defconst my-org-soft-green  "#e9f9e8")
+(defconst my-org-soft-blue   "#e8eff9")
+(defconst my-org-soft-purple "#f3e8f9")
 
-(setq org-capture-templates
-      `(("t" "Tasks" entry
-         (file+headline "~/Dropbox/org-life/organizer.org" "Inbox")
-         ,my/org-basic-task-template)
-        ("T" "Quick task" entry
-         (file+headline "~/Dropbox/org-life/organizer.org" "Inbox")
-         "* TODO %^{Task}\nSCHEDULED: %t\n"
-         :immediate-finish t)
-        ("i" "Interrupting task" entry
-        (file+headline "~/Dropbox/org-life/organizer.org" "Inbox")
-         "* STARTED %^{Task}"
-         :clock-in :clock-resume)
-        ("e" "Emacs idea" entry
-         (file+headline "~/Dropbox/org-life/emacs-notes/tasks.org" "Emacs")
-         "* TODO %^{Task}"
-         :immediate-finish t)
-        ("b" "Business task" entry
-         (file+headline "~/Dropbox/org-life/business.org" "Tasks")
-         ,my/org-basic-task-template)
-        ("p" "People task" entry
-         (file+headline "~/Dropbox/org-life/people.org" "Tasks")
-         ,my/org-basic-task-template)
-        ("j" "Journal entry" plain
-         (file+datetree "~/Dropbox/org-life/journal.org")
-         "%K - %a\n%i\n%?\n"
-         :unnarrowed t)
-        ("J" "Journal entry with date" plain
-         (file+datetree+prompt "~/Dropbox/org-life/journal.org")
-         "%K - %a\n%i\n%?\n"
-         :unnarrowed t)
-        ("s" "Journal entry with date, scheduled" entry
-         (file+datetree+prompt "~/Dropbox/org-life/journal.org")
-         "* \n%K - %a\n%t\t%i\n%?\n"
-         :unnarrowed t)
-        ("c" "Protocol Link" entry (file+headline ,org-default-notes-file "Inbox")
-         "* [[%:link][%:description]] \n\n#+BEGIN_QUOTE\n%i\n#+END_QUOTE\n\n%?\n\nCaptured: %U")
-        ("dt" "Done - Task" entry
-         (file+headline "~/Dropbox/org-life/organizer.org" "Inbox")
-         "* DONE %^{Task}\nSCHEDULED: %^t\n%?")
-        ("q" "Quick note" item
-         (file+headline "~/Dropbox/org-life/organizer.org" "Quick notes"))
-        ("b" "Book" entry
-         (file+datetree "~/Dropbox/org-life/books.org" "Inbox")
-         "* %^{Title}  %^g
-  %i
-  *Author(s):* %^{Author} \\\\
-  *ISBN:* %^{ISBN}
+(declare-function cfw:open-calendar-buffer "calfw")
+(declare-function cfw:refresh-calendar-buffer "calfw")
+(declare-function cfw:org-create-source "calfw-org")
+(declare-function cfw:cal-create-source "calfw-cal")
 
-  %?
+(defun org-fit-agenda-window ()
+  "Fit the window to the buffer size."
+  (and (memq org-agenda-window-setup '(reorganize-frame))
+       (fboundp 'fit-window-to-buffer)
+       (fit-window-to-buffer)))
 
-  *Review on:* %^t \\
-  %a
-  %U"
-         :clock-in :clock-resume)
-        ("b" "Bible" entry
-         (file+datetree "~/Dropbox/org-life/bible.org" "Inbox")
-         "* %^{Book}  %^g
-  %i
-  *Chapter(s):* %^{Chap} \\\\
-  *Verse(s):* %^{Verses}
+(defun my-org-startup ()
+  (org-agenda-list)
+  (org-fit-agenda-window)
+  (org-agenda-to-appt)
+  ;; (other-window 1)
+  ;; (my-calendar)
+  ;; (run-with-idle-timer
+  ;;  0.1 nil
+  ;;  (lambda ()
+  ;;    (let ((wind (get-buffer-window "*Org Agenda*")))
+  ;;      (when wind
+  ;;        (set-frame-selected-window nil wind)
+  ;;        (call-interactively #'org-agenda-redo)))
+  ;;    (let ((wind (get-buffer-window "*cfw-calendar*")))
+  ;;      (when wind
+  ;;        (set-frame-selected-window nil wind)
+  ;;        (call-interactively #'cfw:refresh-calendar-buffer)))
+  ;;    (let ((wind (get-buffer-window "*Org Agenda*")))
+  ;;      (when wind
+  ;;        (set-frame-selected-window nil wind)
+  ;;        (call-interactively #'org-resolve-clocks)))))
+  )
 
-  %?
-
-  *Read on:* %^t \\
-  %a
-  %U"
-           :clock-in :clock-resume)
-           ("C" "Contact" entry (file "~/Dropbox/org-life/contacts.org")
-            "* %(org-contacts-template-name)
-  :PROPERTIES:
-  :EMAIL: %(my/org-contacts-template-email)
-  :END:")
-           ("n" "Daily note" table-line (file+olp "~/Dropbox/org-life/organizer.org" "Inbox")
-            "| %u | %^{Note} |"
-            :immediate-finish t)
-           ("r" "Notes" entry
-            (file+datetree "~/Dropbox/org-life/organizer.org")
-            "* %?\n\n%i\n%U\n"
-            )))
-
-(setq org-startup-indented t)
-(setq org-agenda-files (list "~/Dropbox/org-life/projects.org"))
-;; Configure refile to use ido and allow nested targets
-(setq org-completion-use-ido t)
-(setq org-outline-path-complete-in-steps nil)
-(setq org-refile-use-outline-path t)
-(setq org-refile-targets '((nil . (:maxlevel . 5))))
-(setq org-capture-bookmark nil)
-
-;;(with-eval-after-load 'org
-   (setq org-use-effective-time t)
-
-   (defun my/org-use-speed-commands-for-headings-and-lists ()
-     "Activate speed commands on list items too."
-     (or (and (looking-at org-outline-regexp) (looking-back "^\**"))
-         (save-excursion (and (looking-at (org-item-re)) (looking-back "^[ \t]*")))))
-   (setq org-use-speed-commands 'my/org-use-speed-commands-for-headings-and-lists)
-
-(with-eval-after-load 'org
-   (add-to-list 'org-speed-commands-user '("x" org-todo "DONE"))
-   (add-to-list 'org-speed-commands-user '("y" org-todo-yesterday "DONE"))
-   (add-to-list 'org-speed-commands-user '("!" my/org-clock-in-and-track))
-   (add-to-list 'org-speed-commands-user '("s" call-interactively 'org-schedule))
-   (add-to-list 'org-speed-commands-user '("d" my/org-move-line-to-destination))
-   (add-to-list 'org-speed-commands-user '("i" call-interactively 'org-clock-in))
-   (add-to-list 'org-speed-commands-user '("P" call-interactively 'org2blog/wp-post-subtree))
-   (add-to-list 'org-speed-commands-user '("o" call-interactively 'org-clock-out))
-   (add-to-list 'org-speed-commands-user '("$" call-interactively 'org-archive-subtree))
-   ;;(bind-key "!" 'my/org-clock-in-and-track org-agenda-mode-map)
-
-  (org-sticky-header-mode)
-  (setq org-fontify-whole-heading-line t)
-
-  (font-lock-add-keywords 'org-mode
-                        '(("^ +\\([-*]\\) "
-                         (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
-
-  (setq org-ellipsis "⬎")
-
-  (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
-  (set-face-attribute 'org-table nil :inherit 'fixed-pitch)
-  (add-hook 'markdown-mode-hook (lambda () (variable-pitch-mode t)))
-  (add-hook 'org-mode-hook (lambda () (variable-pitch-mode t)))
-)
-  ;;(let* ((variable-tuple (cond ((x-list-fonts "Consolas") '(:font "Consolas"))
-  ;;                           ((x-list-fonts "DejaVu Sans Mono for Powerline")   '(:font "DejaVu Sans Mono for Powerline"))
-  ;;                           (nil (warn "Cannot find a Sans Serif Font.  Install Source Sans Pro."))))
-  ;;(base-font-color     (face-foreground 'default nil 'default))
-  ;;(headline           `(:inherit default :weight bold :foreground ,base-font-color)))
-
-  ;;(custom-theme-set-faces 'user
-  ;;                        `(markdown-header-level-1 ((t (,@headline ,@variable-tuple :height 1.5)))))
-
-  ;;(custom-theme-set-faces 'user
-  ;;                     `(org-level-8 ((t (,@headline ,@variable-tuple))))
-  ;;                     `(org-level-7 ((t (,@headline ,@variable-tuple))))
-  ;;                     `(org-level-6 ((t (,@headline ,@variable-tuple))))
-  ;;                     `(org-level-5 ((t (,@headline ,@variable-tuple))))
-  ;;                     `(org-level-4 ((t (,@headline ,@variable-tuple :height 1.1))))
-  ;;                     `(org-level-3 ((t (,@headline ,@variable-tuple :height 1.25))))
-  ;;                     `(org-level-2 ((t (,@headline ,@variable-tuple :height 1.35))))
-  ;;                     `(org-level-1 ((t (,@headline ,@variable-tuple :height 1.5))))
-  ;;                     `(org-document-title ((t (,@headline ,@variable-tuple :height 1.5 :underline nil))))))
-
-  (setq org-confirm-babel-evaluate t)
- ;; (add-hook 'emacs-lisp-mode-hook 'outline-minor-mode)
-;;)
-  (setq org-goto-interface 'outline
-      org-goto-max-level 10)
-	(require 'imenu)
-	(setq org-startup-folded nil)
-	(bind-key "C-c j" 'org-clock-goto) ;; jump to current task from anywhere
-	(bind-key "C-c C-w" 'org-refile)
-	(setq org-cycle-include-plain-lists 'integrate)	
-
-  (defun my/org-follow-entry-link ()
-  "Follow the defined link for this entry."
+(defun my-calendar ()
   (interactive)
-  (if (org-entry-get (point) "LINK")
-      (org-open-link-from-string (org-entry-get (point) "LINK"))
-    (org-open-at-point)))
+  (let ((buf (get-buffer "*cfw-calendar*")))
+    (if buf
+        (pop-to-buffer buf nil)
+      (cfw:open-calendar-buffer
+       :contents-sources
+       (list (cfw:org-create-source "Dark Blue")
+             (cfw:cal-create-source "Dark Orange"))
+       :view 'two-weeks))))
 
-(defun my/org-link-projects (location)
-  "Add link properties between the current subtree and the one specified by LOCATION."
-  (interactive
-   (list (let ((org-refile-use-cache nil))
-     (org-refile-get-location "Location"))))
-  (let ((link1 (org-store-link nil)) link2)
-    (save-window-excursion
-      (org-refile 4 nil location)
-      (setq link2 (org-store-link nil))
-      (org-set-property "LINK" link1))
-    (org-set-property "LINK" link2)))
- 
-(defun my/org-refile-and-jump ()
-  (interactive)
-  (if (derived-mode-p 'org-capture-mode)
-      (org-capture-refile)
-    (call-interactively 'org-refile))
-  (org-refile-goto-last-stored))
-(eval-after-load 'org-capture
-  '(bind-key "C-c C-r" 'my/org-refile-and-jump org-capture-mode-map))
+(use-package org-autolist
+  :load-path "site-lisp/org-autolist"
+  :commands org-autolist-mode)
 
-(setq org-reverse-note-order t)
-(setq org-refile-use-outline-path nil)
-(setq org-refile-allow-creating-parent-nodes 'confirm)
-(setq org-refile-use-cache nil)
-(setq org-refile-targets '((org-agenda-files . (:maxlevel . 3))))
-(setq org-blank-before-new-entry nil)
-
-;; Example: (org-refile 4 nil (my/org-refile-get-location-by-substring "Other Emacs"))
-(defun my/org-refile-get-location-by-substring (regexp &optional file)
-  "Return the refile location identified by REGEXP."
-  (let ((org-refile-targets org-refile-targets) tbl)
-    (setq org-refile-target-table (org-refile-get-targets)))
-  (unless org-refile-target-table
-    (user-error "No refile targets"))
-  (cl-find regexp org-refile-target-table
-           :test
-           (lambda (a b)
-             (and
-              (string-match a (car b))
-              (or (null file)
-                  (string-match file (elt b 1)))))))
-
-(defun my/org-refile-subtree-to (name)
-  (org-refile nil nil (my/org-refile-get-location-exact name)))
-
- (defun my/org-refile-get-location-exact (name &optional file)
-  "Return the refile location identified by NAME."
-  (let ((org-refile-targets org-refile-targets) tbl)
-    (setq org-refile-target-table (org-refile-get-targets)))
-  (unless org-refile-target-table
-    (user-error "No refile targets"))
-  (cl-find name org-refile-target-table
-           :test (lambda (a b)
-                 (and (string-equal a (car b))
-              (or (null file)
-                  (string-match file (elt b 1)))))))
-
-;; Example: (my/org-clock-in-refile "Off my computer")
- (defun my/org-clock-in-refile (location &optional file)
-  "Clocks into LOCATION.
-LOCATION and FILE can also be regular expressions for `my/org-refile-get-location-by-substring'."
-  (interactive (list (my/org-refile-get-location)))
-  (save-window-excursion
-    (save-excursion
-      (if (stringp location) (setq location (my/org-refile-get-location-by-substring location file)))
-      (org-refile 4 nil location)
-      (org-clock-in))))
-
- (defun my/org-finish-previous-task-and-clock-in-new-one (location &optional file)
-  (interactive (list (my/org-refile-get-location)))
-  (save-window-excursion
-    (org-clock-goto)
-    (org-todo 'done))
-  (my/org-clock-in-and-track-by-name location file))
-
-(defun my/org-clock-in-and-track-by-name (location &optional file)
-  (interactive (list (my/org-refile-get-location)))
-  (save-window-excursion
-    (save-excursion
-      (if (stringp location) (setq location (my/org-refile-get-location-exact location file)))
-      (org-refile 4 nil location)
-      (my/org-clock-in-and-track))))
-
-(defun my/org-off-my-computer (category)
-  (interactive "MCategory: ")
-  (my/org-clock-in-refile "Off my computer")
-  (quantified-track category))
-
-(defun my/org-jump ()
-  (interactive)
-  (let ((current-prefix-arg '(4)))
-    (call-interactively 'org-refile)))
-
-(setq org-todo-keywords
-      '((sequence
-         "TODO(t)"  ; next action
-         "TOBLOG(b)"  ; next action
-         "STARTED(s)"
-         "WAITING(w@/!)"
-         "SOMEDAY(.)" "|" "DONE(x!)" "CANCELLED(c@)")
-        (sequence "LEARN" "TRY" "TEACH" "|" "COMPLETE(x)")
-        (sequence "TOSKETCH" "SKETCHED" "|" "POSTED")
-        (sequence "TOBUY" "TOSHRINK" "TOCUT"  "TOSEW" "|" "DONE(x)")
-        (sequence "TODELEGATE(-)" "DELEGATED(d)" "|" "COMPLETE(x)")))
-
-(setq org-todo-keyword-faces
-      '(("TODO" . (:foreground "green" :weight bold))
-        ("DONE" . (:foreground "cyan" :weight bold))
-        ("WAITING" . (:foreground "red" :weight bold))
-        ("SOMEDAY" . (:foreground "gray" :weight bold))))
-
-(setq org-log-done 'time)
-
-(setq org-tags-exclude-from-inheritance '("project"))
-
-;;(add-to-list 'org-speed-commands-user '("N" org-narrow-to-subtree))
-;;(add-to-list 'org-speed-commands-user '("W" widen))
-
-(defun my/org-agenda-for-subtree ()
-  (interactive)
-  (when (derived-mode-p 'org-agenda-mode) (org-agenda-switch-to))
-  (my/org-with-current-task
-   (let ((org-agenda-view-columns-initially t))
-     (org-agenda nil "t" 'subtree))))
-;;(add-to-list 'org-speed-commands-user '("T" my/org-agenda-for-subtree))
-
-(setq org-tag-alist '(("@work" . ?b)
-                      ("@home" . ?h)
-                      ("@writing" . ?w)
-                      ("@errands" . ?e)
-                      ("@learning" . ?d)
-                      ("@coding" . ?c)
-                      ("@improvement" . ?i)
-                      ("@phone" . ?p)
-                      ("@reading" . ?r)
-                      ("@computer" . ?l)
-                      ("@bible" . ?q)
-                      ("@church" . ?1)))
-
-;;(add-to-list 'org-global-properties
-;;             '("Effort_ALL". "0:05 0:15 0:30 1:00 2:00 3:00 4:00"))
-
-(use-package org
+(use-package calfw
+  :load-path "site-lisp/emacs-calfw"
+  :bind ("C-c A" . my-calendar)
   :init
   (progn
-    (setq org-expiry-inactive-timestamps t)
-    (setq org-clock-idle-time nil)
-    (setq org-log-done 'time)
-    (setq org-clock-continuously nil)
-    (setq org-clock-persist t)
-    (setq org-clock-in-switch-to-state "STARTED")
-    (setq org-clock-in-resume nil)
-    (setq org-show-notification-handler 'message)
-    (setq org-clock-report-include-clocking-task t))
+    (use-package calfw-cal)
+    (use-package calfw-org)
+
+    (bind-key "M-n" 'cfw:navi-next-month-command cfw:calendar-mode-map)
+    (bind-key "M-p" 'cfw:navi-previous-month-command cfw:calendar-mode-map))
+
   :config
-  (org-clock-persistence-insinuate))
+  (progn
+    ;; Unicode characters
+    (setq cfw:fchar-junction ?╋
+          cfw:fchar-vertical-line ?┃
+          cfw:fchar-horizontal-line ?━
+          cfw:fchar-left-junction ?┣
+          cfw:fchar-right-junction ?┫
+          cfw:fchar-top-junction ?┯
+          cfw:fchar-top-left-corner ?┏
+          cfw:fchar-top-right-corner ?┓)
 
-(setq org-log-into-drawer "LOGBOOK")
-(setq org-clock-into-drawer 1)
+    (bind-key "j" 'cfw:navi-goto-date-command cfw:calendar-mode-map)
+    (bind-key "g" 'cfw:refresh-calendar-buffer cfw:calendar-mode-map)))
 
-(setq org-habit-graph-column 80)
-(setq org-habit-show-habits-only-for-today nil)
+(defadvice org-refile-get-location (before clear-refile-history activate)
+  "Fit the Org Agenda to its buffer."
+  (setq org-refile-history nil))
 
-(add-hook 'org-clock-in-prepare-hook
-          'my/org-mode-ask-effort)
-
-(defun my/org-mode-ask-effort ()
-  "Ask for an effort estimate when clocking in."
-  (unless (org-entry-get (point) "Effort")
-    (let ((effort
-           (completing-read
-            "Effort: "
-            (org-entry-get-multivalued-property (point) "Effort"))))
-      (unless (equal effort "")
-        (org-set-property "Effort" effort)))))
-
-(defvar my/org-agenda-limit-items nil "Number of items to show in agenda to-do views; nil if unlimited.")
-(eval-after-load 'org
-  '(defadvice org-agenda-finalize-entries (around sacha activate)
-     (if my/org-agenda-limit-items
-         (progn
-           (setq list (mapcar 'org-agenda-highlight-todo list))
-           (setq ad-return-value
-                 (subseq list 0 my/org-agenda-limit-items))
-           (when org-agenda-before-sorting-filter-function
-             (setq list (delq nil (mapcar org-agenda-before-sorting-filter-function list))))
-           (setq ad-return-value
-                 (mapconcat 'identity
-                            (delq nil
-                                  (subseq
-                                   (sort list 'org-entries-lessp)
-                                   0
-                                   my/org-agenda-limit-items))
-                            "\n")))
-       ad-do-it)))
-
-(setq org-enforce-todo-dependencies t)
-(setq org-track-ordered-property-with-tag t)
-(setq org-agenda-dim-blocked-tasks t)
-
-(setq org-structure-template-alist
-      '(("s" "#+begin_src ?\n\n#+end_src" "<src lang=\"?\">\n\n</src>")
-        ("e" "#+begin_example\n?\n#+end_example" "<example>\n?\n</example>")
-        ("q" "#+begin_quote\n?\n#+end_quote" "<quote>\n?\n</quote>")
-        ("v" "#+BEGIN_VERSE\n?\n#+END_VERSE" "<verse>\n?\n</verse>")
-        ("c" "#+BEGIN_COMMENT\n?\n#+END_COMMENT")
-        ("p" "#+BEGIN_PRACTICE\n?\n#+END_PRACTICE")
-        ("l" "#+begin_src emacs-lisp\n?\n#+end_src" "<src lang=\"emacs-lisp\">\n?\n</src>")
-        ("L" "#+latex: " "<literal style=\"latex\">?</literal>")
-        ("h" "#+begin_html\n?\n#+end_html" "<literal style=\"html\">\n?\n</literal>")
-        ("H" "#+html: " "<literal style=\"html\">?</literal>")
-        ("a" "#+begin_ascii\n?\n#+end_ascii")
-        ("A" "#+ascii: ")
-        ("i" "#+index: ?" "#+index: ?")
-        ("I" "#+include %file ?" "<include file=%file markup=\"?\">")))
-
-(defun my/org-html-quote2 (block backend info)
-  (when (org-export-derived-backend-p backend 'html)
-    (when (string-match "\\`<div class=\"quote2\">" block)
-      (setq block (replace-match "<blockquote>" t nil block))
-      (string-match "</div>\n\\'" block)
-      (setq block (replace-match "</blockquote>\n" t nil block))
-      block)))
-(eval-after-load 'ox
-  '(add-to-list 'org-export-filter-special-block-functions 'my/org-html-quote2))
-
-(setq org-agenda-span 2)
-(setq org-agenda-tags-column -100) ; take advantage of the screen width
-(setq org-agenda-sticky nil)
-(setq org-agenda-inhibit-startup t)
-(setq org-agenda-use-tag-inheritance t)
-(setq org-agenda-show-log t)
-(setq org-agenda-skip-scheduled-if-done t)
-(setq org-agenda-skip-deadline-if-done t)
-(setq org-agenda-skip-deadline-prewarning-if-scheduled 'pre-scheduled)
-(setq org-agenda-time-grid
-      '((daily today require-timed)
-        "----------------"
-        (800 1000 1200 1400 1600 1800)))
-(setq org-columns-default-format "%14SCHEDULED %Effort{:} %1PRIORITY %TODO %50ITEM %TAGS")
-
-(defvar my/weekly-review-line-regexp
-  "^  \\([^:]+\\): +\\(Sched[^:]+: +\\)?TODO \\(.*?\\)\\(?:[      ]+\\(:[[:alnum:]_@#%:]+:\\)\\)?[        ]*$"
-  "Regular expression matching lines to include.")
-(defvar my/weekly-done-line-regexp
-  "^  \\([^:]+\\): +.*?\\(?:Clocked\\|Closed\\):.*?\\(TODO\\|DONE\\) \\(.*?\\)\\(?:[       ]+\\(:[[:alnum:]_@#%:]+:\\)\\)?[        ]*$"
-  "Regular expression matching lines to include as completed tasks.")
-
-(defun my/quantified-get-hours (category time-summary)
-  "Return the number of hours based on the time summary."
-  (if (stringp category)
-      (if (assoc category time-summary) (/ (cdr (assoc category time-summary)) 3600.0) 0)
-    (apply '+ (mapcar (lambda (x) (my/quantified-get-hours x time-summary)) category))))
-
-(defun _my/extract-tasks-from-agenda (string matchers prefix line-re)
-  (with-temp-buffer
-    (insert string)
-    (goto-char (point-min))
-    (while (re-search-forward line-re nil t)
-      (let ((temp-list matchers))
-        (while temp-list
-          (if (save-match-data
-                (string-match (car (car temp-list)) (match-string 1)))
+(defun jump-to-org-agenda ()
+  (interactive)
+  (let ((buf (get-buffer "*Org Agenda*"))
+        wind)
+    (if buf
+        (if (setq wind (get-buffer-window buf))
+            (when (called-interactively-p 'any)
+              (select-window wind)
+              (org-fit-window-to-buffer))
+          (if (called-interactively-p 'any)
               (progn
-                (add-to-list (cdr (car temp-list)) (concat prefix (match-string 3)) t)
-                (setq temp-list nil)))
-          (setq temp-list (cdr temp-list)))))))
+                (select-window (display-buffer buf t t))
+                (org-fit-window-to-buffer))
+            (with-selected-window (display-buffer buf)
+              (org-fit-window-to-buffer))))
+      (call-interactively 'org-agenda-list))))
 
-(ert-deftest _my/extract-tasks-from-agenda ()
-  (let (list-a list-b (line-re "\\([^:]+\\):\\( \\)\\(.*\\)"))
-    (_my/extract-tasks-from-agenda
-     "listA: Task 1\nother: Task 2\nlistA: Task 3"
-     '(("listA" . list-a)
-       ("." . list-b))
-     "- [ ] "
-     line-re)
-    (should (equal list-a '("- [ ] Task 1" "- [ ] Task 3")))
-    (should (equal list-b '("- [ ] Task 2")))))
+(defun org-get-global-property (name)
+  (save-excursion
+    (goto-char (point-min))
+    (and (re-search-forward (concat "#\\+PROPERTY: " name " \\(.*\\)") nil t)
+         (match-string 1))))
 
-(defun _my/get-upcoming-tasks ()
-  (save-window-excursion
-      (org-agenda nil "W")
-      (_my/extract-tasks-from-agenda (buffer-string)
-                                        '(("routines" . ignore)
-                                          ("business" . business-next)
-                                          ("people" . relationships-next)
-                                          ("tasks" . emacs-next)
-                                          ("." . life-next))
-                                        "  - [ ] "
-                                        my/weekly-review-line-regexp)))
-(defun _my/get-previous-tasks ()
-  (let (string)
-    (save-window-excursion
-      (org-agenda nil "W")
-      (org-agenda-later -1)
-      (org-agenda-log-mode 16)
-      (setq string (buffer-string))
-      ;; Get any completed tasks from the current week as well
-      (org-agenda-later 1)
-      (org-agenda-log-mode 16)
-      (setq string (concat string "\n" (buffer-string)))
-      (_my/extract-tasks-from-agenda string
-                                        '(("routines" . ignore)
-                                          ("business" . business)
-                                          ("people" . relationships)
-                                          ("tasks" . emacs)
-                                          ("." . life))
-                                        "  - [X] "
-                                        my/weekly-done-line-regexp))))
+(defun org-agenda-add-overlays (&optional line)
+; Add overlays found in OVERLAY properties to agenda items.
+; Note that habitual items are excluded, as they already
+; extensively use text properties to draw the habits graph.
 
-(defun my/org-summarize-focus-areas (date)
-  "Summarize previous and upcoming tasks as a list."
-  (interactive (list (org-read-date-analyze (if current-prefix-arg (org-read-date) "-fri") nil '(0 0 0))))
-  (let (business relationships life business-next relationships-next life-next string emacs emacs-next
-                 start end time-summary biz-time ignore base-date)
-    (setq base-date (apply 'encode-time date))
-    (setq start (format-time-string "%Y-%m-%d" (days-to-time (- (time-to-number-of-days base-date) 6))))
-    (setq end (format-time-string "%Y-%m-%d" (days-to-time (1+ (time-to-number-of-days base-date)))))
-    (setq time-summary (quantified-summarize-time start end))
-    (setq biz-time (my/quantified-get-hours "Business" time-summary))
-    (_my/get-upcoming-tasks)
-    (_my/get-previous-tasks)
-    (setq string
-          (concat
-           (format "- *Business* (%.1fh - %d%%)\n" biz-time (/ biz-time 1.68))
-           (mapconcat 'identity business "\n") "\n"
-           (mapconcat 'identity business-next "\n")
-           "\n"
-           (format "  - *Earn* (%.1fh - %d%% of Business)\n"
-                   (my/quantified-get-hours "Business - Earn" time-summary)
-                   (/ (my/quantified-get-hours "Business - Earn" time-summary) (* 0.01 biz-time)))
-           (format "  - *Build* (%.1fh - %d%% of Business)\n"
-                   (my/quantified-get-hours "Business - Build" time-summary)
-                   (/ (my/quantified-get-hours "Business - Build" time-summary) (* 0.01 biz-time)))
-           (format "  - *Connect* (%.1fh - %d%% of Business)\n"
-                   (my/quantified-get-hours "Business - Connect" time-summary)
-                   (/ (my/quantified-get-hours "Business - Connect" time-summary) (* 0.01 biz-time)))
-           (format "- *Relationships* (%.1fh - %d%%)\n"
-                   (my/quantified-get-hours '("Discretionary - Social"
-                                                 "Discretionary - Family") time-summary)
-                   (/ (my/quantified-get-hours '("Discretionary - Social"
-                                                    "Discretionary - Family") time-summary) 1.68))
-           (mapconcat 'identity relationships "\n") "\n"
-           (mapconcat 'identity relationships-next "\n") "\n"
-           "\n"
-           (format "- *Discretionary - Productive* (%.1fh - %d%%)\n"
-                   (my/quantified-get-hours "Discretionary - Productive" time-summary)
-                   (/ (my/quantified-get-hours "Discretionary - Productive" time-summary) 1.68))
-           (format "  - *Drawing* (%.1fh)\n"
-                   (my/quantified-get-hours '("Discretionary - Productive - Drawing")  time-summary))
-           (format "  - *Emacs* (%.1fh)\n"
-                   (my/quantified-get-hours "Discretionary - Productive - Emacs" time-summary))
-           (mapconcat 'identity emacs "\n") "\n"
-           (mapconcat 'identity emacs-next "\n") "\n"
-           (format "  - *Coding* (%.1fh)\n"
-                   (my/quantified-get-hours "Discretionary - Productive - Coding" time-summary))
-           (mapconcat 'identity life "\n") "\n"
-           (mapconcat 'identity life-next "\n") "\n"
-           (format "  - *Sewing* (%.1fh)\n"
-                   (my/quantified-get-hours "Discretionary - Productive - Sewing" time-summary))
-           (format "  - *Writing* (%.1fh)\n"
-                   (my/quantified-get-hours "Discretionary - Productive - Writing" time-summary))
-           (format "- *Discretionary - Play* (%.1fh - %d%%)\n"
-                   (my/quantified-get-hours "Discretionary - Play" time-summary)
-                   (/ (my/quantified-get-hours "Discretionary - Play" time-summary) 1.68))
-           (format "- *Personal routines* (%.1fh - %d%%)\n"
-                   (my/quantified-get-hours "Personal" time-summary)
-                   (/ (my/quantified-get-hours "Personal" time-summary) 1.68))
-           (format "- *Unpaid work* (%.1fh - %d%%)\n"
-                   (my/quantified-get-hours "Unpaid work" time-summary)
-                   (/ (my/quantified-get-hours "Unpaid work" time-summary) 1.68))
-           (format "  - *Childcare* (%.1fh - %d%% of total)\n"
-                   (my/quantified-get-hours '("Unpaid work - Childcare") time-summary)
-                   (/ (my/quantified-get-hours '("Unpaid work - Childcare") time-summary) 1.68))
-           (format "- *Sleep* (%.1fh - %d%% - average of %.1f per day)\n"
-                   (my/quantified-get-hours "Sleep" time-summary)
-                   (/ (my/quantified-get-hours "Sleep" time-summary) 1.68)
-                   (/ (my/quantified-get-hours "Sleep" time-summary) 7)
-                   )))
-    (if (called-interactively-p 'any)
-        (insert string)
-      string)))
+; For example, for work tasks I like to use a subtle, yellow
+; background color; for tasks involving other people, green; and
+; for tasks concerning only myself, blue.  This way I know at a
+; glance how different responsibilities are divided for any given
+; day.
 
-(defun my/org-add-line-item-task (task)
-  (interactive "MTask: ")
-  (org-insert-heading)
-  (insert "[ ] " task)
-  (let ((org-capture-entry '("t" "Tasks" entry
-                             (file+headline "~/Dropbox/org-life/organizer.org" "Tasks")
-                             "")))
-    (org-capture nil "t")
-    (insert "TODO " task "\nSCHEDULED: <" (org-read-date) ">")))
-                                        ;(define-key org-mode-map (kbd "C-c t") 'my/org-add-line-item-task)
+; To achieve this, I have the following in my todo file:
 
-(defun my/org-prepare-weekly-review (&optional date skip-urls)
-  "Prepare weekly review template."
-  (interactive (list (org-read-date-analyze (if current-prefix-arg (org-read-date) "-fri") nil '(0 0 0))))
-  (let ((base-date (apply 'encode-time date))
-        start end links)
-    (setq start (format-time-string "%Y-%m-%d" (days-to-time (- (time-to-number-of-days base-date) 6))))
-    (setq end (format-time-string "%Y-%m-%d" (days-to-time (1+ (time-to-number-of-days base-date)))))
-    (outline-next-heading)
-    (insert
-     "*** Weekly review: Week ending " (format-time-string "%B %e, %Y" base-date) "  :weekly:\n"
-     "*Blog posts*\n\n"
-     "*Sketches*\n\n"
-     (my/sketches-export-and-extract start end) "\n"
-     "\n\n*Focus areas and time review*\n\n"
-     (my/org-summarize-focus-areas date)
-     "\n")))
+;   * Work
+;     :PROPERTIES:
+;     :CATEGORY: Work
+;     :OVERLAY:  (face (:background \"#fdfdeb\"))
+;     :END:
+;   ** TODO Task
+;   * Family
+;     :PROPERTIES:
+;     :CATEGORY: Personal
+;     :OVERLAY:  (face (:background \"#e8f9e8\"))
+;     :END:
+;   ** TODO Task
+;   * Personal
+;     :PROPERTIES:
+;     :CATEGORY: Personal
+;     :OVERLAY:  (face (:background \"#e8eff9\"))
+;     :END:
+;   ** TODO Task
 
-(defun my/org-review-month (start-date)
-  "Review the month's clocked tasks and time."
-  (interactive (list (org-read-date)))
-  ;; Set to the beginning of the month
-  (setq start-date (concat (substring start-date 0 8) "01"))
-  (let ((org-agenda-show-log t)
-        (org-agenda-start-with-log-mode t)
-        (org-agenda-start-with-clockreport-mode t)
-        (org-agenda-clockreport-parameter-plist '(:link t :maxlevel 3)))
-    (org-agenda-list nil start-date 'month)))
+; The colors (which only work well for white backgrounds) are:
+
+;   Yellow: #fdfdeb
+;   Green:  #e8f9e8
+;   Blue:   #e8eff9
+
+; To use this function, add it to `org-agenda-finalize-hook':
+
+  (add-hook 'org-finalize-agenda-hook 'org-agenda-add-overlays)
+  (let ((inhibit-read-only t) l c
+        (buffer-invisibility-spec '(org-link)))
+    (save-excursion
+      (goto-char (if line (point-at-bol) (point-min)))
+      (while (not (eobp))
+        (let ((org-marker (get-text-property (point) 'org-marker)))
+          (when (and org-marker
+                     (null (overlays-at (point)))
+                     (not (get-text-property (point) 'org-habit-p))
+                     (string-match "\\(sched\\|dead\\|todo\\)"
+                                   (get-text-property (point) 'type)))
+            (let ((overlays
+                   (or (org-entry-get org-marker "OVERLAY" t)
+                       (with-current-buffer (marker-buffer org-marker)
+                         (org-get-global-property "OVERLAY")))))
+              (when overlays
+                (goto-char (line-end-position))
+                (let ((rest (- (window-width) (current-column))))
+                  (if (> rest 0)
+                      (insert (make-string rest ? ))))
+                (let ((ol (make-overlay (line-beginning-position)
+                                        (line-end-position)))
+                      (proplist (read overlays)))
+                  (while proplist
+                    (overlay-put ol (car proplist) (cadr proplist))
+                    (setq proplist (cddr proplist))))))))
+        (forward-line)))))
+
+(add-hook 'org-finalize-agenda-hook 'org-agenda-add-overlays)
+
+(autoload 'gnus-goto-article "dot-gnus")
+(autoload 'gnus-string-remove-all-properties "gnus-util")
+
+(defun gnus-summary-mark-read-and-unread-as-read (&optional new-mark)
+  "Intended to be used by `gnus-mark-article-hook'."
+  (let ((mark (gnus-summary-article-mark)))
+    (when (or (gnus-unread-mark-p mark)
+	      (gnus-read-mark-p mark))
+      (ignore-errors
+        (gnus-summary-mark-article gnus-current-article
+                                   (or new-mark gnus-read-mark))))))
+
+(defun org-todo-age-time (&optional pos)
+  (let ((stamp (org-entry-get (or pos (point)) "CREATED" t)))
+    (when stamp
+      (time-subtract (current-time)
+                     (org-time-string-to-time
+                      (org-entry-get (or pos (point)) "CREATED" t))))))
+
+(defun org-todo-age (&optional pos)
+  (let ((days (time-to-number-of-days (org-todo-age-time pos))))
+    (cond
+     ((< days 1)   "today")
+     ((< days 7)   (format "%dd" days))
+     ((< days 30)  (format "%.1fw" (/ days 7.0)))
+     ((< days 358) (format "%.1fm" (/ days 30.0)))
+     (t            (format "%.1fy" (/ days 365.0))))))
+
+(defun org-compare-todo-age (a b)
+  (let ((time-a (org-todo-age-time (get-text-property 0 'org-hd-marker a)))
+        (time-b (org-todo-age-time (get-text-property 0 'org-hd-marker b))))
+    (if (time-less-p time-a time-b)
+        -1
+      (if (equal time-a time-b)
+          0
+        1))))
+
+(defun org-my-message-open (message-id)
+  (if (get-buffer "*Group*")
+      (gnus-goto-article
+       (gnus-string-remove-all-properties (substring message-id 2)))
+    (org-mac-message-open message-id)))
+
+;;(add-to-list 'org-link-protocols (list "message" 'org-my-message-open nil))
+
+(defun save-org-mode-files ()
+  (dolist (buf (buffer-list))
+    (with-current-buffer buf
+      (when (eq major-mode 'org-mode)
+        (if (and (buffer-modified-p) (buffer-file-name))
+            (save-buffer))))))
+
+(run-with-idle-timer 25 t 'save-org-mode-files)
+
+(defun my-org-push-mobile ()
+  (interactive)
+  (with-current-buffer (find-file-noselect "~/doc/tasks/todo.txt")
+    (org-mobile-push)))
+
+(eval-when-compile
+  (defvar org-clock-current-task)
+  (defvar org-mobile-directory)
+  (defvar org-mobile-capture-file))
+
+(defun quickping (host)
+  (= 0 (call-process "ping" nil nil nil "-c1" "-W50" "-q" host)))
+
+(defun org-my-auto-exclude-function (tag)
+  (and (cond
+        ((string= tag "call")
+         (let ((hour (nth 2 (decode-time))))
+           (or (< hour 8) (> hour 21))))
+        ((string= tag "errand")
+         (let ((hour (nth 2 (decode-time))))
+           (or (< hour 12) (> hour 17))))
+        ((or (string= tag "home") (string= tag "nasim"))
+         (with-temp-buffer
+           (call-process "ifconfig" nil t nil "en0" "inet")
+           (call-process "ifconfig" nil t nil "en1" "inet")
+           (call-process "ifconfig" nil t nil "bond0" "inet")
+           (goto-char (point-min))
+           (not (re-search-forward "inet 192\\.168\\.9\\." nil t))))
+        ((string= tag "net")
+         (not (quickping "imap.gmail.com")))
+        ((string= tag "fun")
+         org-clock-current-task))
+       (concat "-" tag)))
+
+(defun my-mobileorg-convert ()
+  (interactive)
+  (while (re-search-forward "^\\* " nil t)
+    (goto-char (match-beginning 0))
+    (insert ?*)
+    (forward-char 2)
+    (insert "TODO ")
+    (goto-char (line-beginning-position))
+    (forward-line)
+    (re-search-forward "^\\[")
+    (goto-char (match-beginning 0))
+    (let ((uuid
+           (save-excursion
+             (re-search-forward "^\\*\\* Note ID: \\(.+\\)")
+             (prog1
+                 (match-string 1)
+               (delete-region (match-beginning 0)
+                              (match-end 0))))))
+      (insert (format "SCHEDULED: %s\n:PROPERTIES:\n"
+                      (format-time-string (org-time-stamp-format))))
+      (insert (format ":ID:       %s\n:CREATED:  " uuid)))
+    (forward-line)
+    (insert ":END:")))
+
+(defun my-org-convert-incoming-items ()
+  (interactive)
+  (with-current-buffer
+      (find-file-noselect (expand-file-name org-mobile-capture-file
+                                            org-mobile-directory))
+    (goto-char (point-min))
+    (unless (eobp)
+      (my-mobileorg-convert)
+      (goto-char (point-max))
+      (if (bolp)
+          (delete-char -1))
+      (let ((tasks (buffer-string)))
+        (set-buffer-modified-p nil)
+        (kill-buffer (current-buffer))
+        (with-current-buffer (find-file-noselect "~/doc/tasks/todo.txt")
+          (save-excursion
+            (goto-char (point-min))
+            (re-search-forward "^\\* Inbox$")
+            (re-search-forward "^:END:")
+            (forward-line)
+            (goto-char (line-beginning-position))
+            (if (and tasks (> (length tasks) 0))
+                (insert tasks ?\n))))))))
+
+(defun my-org-mobile-pre-pull-function ()
+  (my-org-convert-incoming-items))
+
+(add-hook 'org-mobile-pre-pull-hook 'my-org-mobile-pre-pull-function)
+
+(defun org-my-state-after-clock-out (state)
+  (if (string= state "STARTED") "TODO" state))
+
+(defvar org-my-archive-expiry-days 9
+  "The number of days after which a completed task should be auto-archived. This can be 0 for immediate, or a floating point value.")
+
+(defconst org-my-ts-regexp
+  "[[<]\\([0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\} [^]>\r\n]*?\\)[]>]"
+  "Regular expression for fast inactive time stamp matching.")
+
+(defun org-my-closing-time ()
+  (let* ((state-regexp
+          (concat "- State \"\\(?:" (regexp-opt org-done-keywords)
+                  "\\)\"\\s-*\\[\\([^]\n]+\\)\\]"))
+         (regexp (concat "\\(" state-regexp "\\|" org-my-ts-regexp "\\)"))
+         (end (save-excursion
+                (outline-next-heading)
+                (point)))
+         begin
+         end-time)
+    (goto-char (line-beginning-position))
+    (while (re-search-forward regexp end t)
+      (let ((moment (org-parse-time-string (match-string 1))))
+        (if (or (not end-time)
+                (time-less-p (apply #'encode-time end-time)
+                             (apply #'encode-time moment)))
+            (setq end-time moment))))
+    (goto-char end)
+    end-time))
+
+(defun org-archive-expired-tasks ()
+  (interactive)
+  (save-excursion
+    (goto-char (point-min))
+    (let ((done-regexp
+           (concat "^\\*\\* \\(" (regexp-opt org-done-keywords) "\\) ")))
+      (while (re-search-forward done-regexp nil t)
+        (if (>= (time-to-number-of-days
+                 (time-subtract (current-time)
+                                (apply #'encode-time (org-my-closing-time))))
+                org-my-archive-expiry-days)
+            (org-archive-subtree))))
+    (save-buffer)))
+
+(defalias 'archive-expired-tasks 'org-archive-expired-tasks)
+
+(defun org-archive-done-tasks ()
+  (interactive)
+  (save-excursion
+    (goto-char (point-min))
+    (while (re-search-forward "\* \\(DONE\\|CANCELED\\) " nil t)
+      (if (save-restriction
+            (save-excursion
+              (org-narrow-to-subtree)
+              (search-forward ":LOGBOOK:" nil t)))
+          (forward-line)
+        (org-archive-subtree)
+        (goto-char (line-beginning-position))))))
+
+(defalias 'archive-done-tasks 'org-archive-done-tasks)
+
+(defun org-get-inactive-time ()
+  (float-time (org-time-string-to-time
+               (or (org-entry-get (point) "TIMESTAMP")
+                   (org-entry-get (point) "TIMESTAMP_IA")
+                   (debug)))))
+
+(defun org-get-completed-time ()
+  (let ((begin (point)))
+    (save-excursion
+      (outline-next-heading)
+      (and (re-search-backward
+            (concat "\\(- State \"\\(DONE\\|DEFERRED\\|CANCELED\\)\""
+                    "\\s-+\\[\\(.+?\\)\\]\\|CLOSED: \\[\\(.+?\\)\\]\\)")
+            begin t)
+           (float-time (org-time-string-to-time (or (match-string 3)
+                                                    (match-string 4))))))))
+
+(defun org-sort-done-tasks ()
+  (interactive)
+  (goto-char (point-min))
+  (org-sort-entries t ?F #'org-get-inactive-time #'<)
+  (goto-char (point-min))
+  (while (re-search-forward "
+
+
++" nil t)
+    (delete-region (match-beginning 0) (match-end 0))
+    (insert "
+"))
+  (let (after-save-hook)
+    (save-buffer))
+  (org-overview))
+
+(defalias 'sort-done-tasks 'org-sort-done-tasks)
+
+(defun org-sort-all ()
+  (interactive)
+  (save-excursion
+    (goto-char (point-min))
+    (while (re-search-forward "^\* " nil t)
+      (goto-char (match-beginning 0))
+      (condition-case err
+          (progn
+            ;; (org-sort-entries t ?a)
+            (org-sort-entries t ?p)
+            (org-sort-entries t ?o))
+        (error nil))
+      (forward-line))
+    (goto-char (point-min))
+    (while (re-search-forward "\* PROJECT " nil t)
+      (goto-char (line-beginning-position))
+      (ignore-errors
+        ;; (org-sort-entries t ?a)
+        (org-sort-entries t ?p)
+        (org-sort-entries t ?o))
+      (forward-line))))
+
+(defun org-cleanup ()
+  (interactive)
+  (org-archive-expired-tasks)
+  (org-sort-all))
+
+(defvar my-org-wrap-region-history nil)
+
+(defun my-org-wrap-region (&optional arg)
+  (interactive "P")
+  (save-excursion
+    (goto-char (region-end))
+    (if arg
+        (insert "#+end_src\n")
+      (insert ":END:\n"))
+    (goto-char (region-beginning))
+    (if arg
+        (insert "#+begin_src "
+                (read-string "Language: " nil 'my-org-wrap-region-history)
+                ?\n)
+      (insert ":OUTPUT:\n"))))
+
+(defun org-get-message-link (&optional title)
+  (let (message-id subject)
+    (with-current-buffer gnus-original-article-buffer
+      (setq message-id (substring (message-field-value "message-id") 1 -1)
+            subject (or title (message-field-value "subject"))))
+    (org-make-link-string (concat "message://" message-id)
+                          (rfc2047-decode-string subject))))
+
+(defun org-insert-message-link (&optional arg)
+  (interactive "P")
+  (insert (org-get-message-link (if arg "writes"))))
+
+(defun org-set-message-link ()
+  "Set a property for the current headline."
+  (interactive)
+  (org-set-property "Message" (org-get-message-link)))
+
+(defun org-get-message-sender ()
+  (let (message-id subject)
+    (with-current-buffer gnus-original-article-buffer
+      (message-field-value "from"))))
+
+(defun org-set-message-sender ()
+  "Set a property for the current headline."
+  (interactive)
+  (org-set-property "Submitter" (org-get-message-sender)))
+
+(defun org-get-safari-link ()
+  (let ((subject (substring (do-applescript
+                             (string-to-multibyte "tell application \"Safari\"
+        name of document of front window
+end tell")) 1 -1))
+        (url (substring (do-applescript
+                         (string-to-multibyte "tell application \"Safari\"
+        URL of document of front window
+end tell")) 1 -1)))
+    (org-make-link-string url subject)))
+
+(defun org-get-chrome-link ()
+  (let ((subject (do-applescript
+                  (string-to-multibyte "tell application \"Google Chrome\"
+        title of active tab of front window
+end tell")))
+        (url (do-applescript
+              (string-to-multibyte "tell application \"Google Chrome\"
+        URL of active tab of front window
+end tell"))))
+    (org-make-link-string (substring url 1 -1) (substring subject 1 -1))))
+
+(defun org-insert-url-link ()
+  (interactive)
+  (insert (org-get-safari-link)))
+
+(defun org-set-url-link ()
+  "Set a property for the current headline."
+  (interactive)
+  (org-set-property "URL" (org-get-safari-link)))
+
+(defun org-insert-file-link ()
+ (interactive)
+ (insert (org-get-file-link)))
+
+(defun org-set-file-link ()
+ "Set a property for the current headline."
+ (interactive)
+ (org-set-property "File" (org-get-file-link)))
+
+(add-hook 'org-log-buffer-setup-hook
+          (lambda ()
+            (setq fill-column (- fill-column 5))))
+
+(defun org-message-reply ()
+  (interactive)
+  (let* ((org-marker (get-text-property (point) 'org-marker))
+         (author (org-entry-get (or org-marker (point)) "Author"))
+         (subject (if org-marker
+                      (with-current-buffer (marker-buffer org-marker)
+                        (goto-char org-marker)
+                        (nth 4 (org-heading-components)))
+                    (nth 4 (org-heading-components)))))
+    (setq subject (replace-regexp-in-string "\\`(.*?) " "" subject))
+    (compose-mail-other-window author (concat "Re: " subject))))
+
+;;;_  . keybindings
+
+(defvar org-mode-completion-keys
+  '((?d . "DONE")
+    (?g . "DELEGATED")
+    (?n . "NOTE")
+    (?r . "DEFERRED")
+    (?s . "STARTED")
+    (?t . "TODO")
+    (?w . "WAITING")
+    (?x . "CANCELED")
+    (?y . "SOMEDAY")
+    ))
+
+(defvar org-todo-state-map nil)
+(define-prefix-command 'org-todo-state-map)
+
+(dolist (ckey org-mode-completion-keys)
+  (let* ((key (car ckey))
+         (label (cdr ckey))
+         (org-sym (intern (concat "my-org-todo-" (downcase label))))
+         (org-sym-no-logging
+          (intern (concat "my-org-todo-" (downcase label) "-no-logging")))
+         (org-agenda-sym
+          (intern (concat "my-org-agenda-todo-" (downcase label))))
+         (org-agenda-sym-no-logging
+          (intern (concat "my-org-agenda-todo-"
+                          (downcase label) "-no-logging"))))
+    (eval
+     `(progn
+        (defun ,org-sym ()
+          (interactive)
+          (org-todo ,label))
+        (bind-key (concat "C-c x " (char-to-string ,key)) ',org-sym)
+
+        (defun ,org-sym-no-logging ()
+          (interactive)
+          (let ((org-inhibit-logging t))
+            (org-todo ,label)))
+        (bind-key (concat "C-c x " (char-to-string  ,(upcase key)))
+                  ',org-sym-no-logging)
+
+        (defun ,org-agenda-sym ()
+          (interactive)
+          (let ((org-inhibit-logging
+                 (let ((style (org-entry-get
+                               (get-text-property (point) 'org-marker)
+                               "STYLE")))
+                   (and style (stringp style)
+                        (string= style "habit")))))
+            (org-agenda-todo ,label)))
+        (define-key org-todo-state-map [,key] ',org-agenda-sym)
+
+        (defun ,org-agenda-sym-no-logging ()
+          (interactive)
+          (let ((org-inhibit-logging t))
+            (org-agenda-todo ,label)))
+        (define-key org-todo-state-map [,(upcase key)]
+          ',org-agenda-sym-no-logging)))))
+
+(bind-key "C-c x b"
+          (lambda (bug) (error "Define bug syntax!")
+            ;; (interactive "sBug: ")
+            ;; (insert (format "[[project:%s][#%s]]" bug bug))
+            ))
+(bind-key "C-c x l" 'org-insert-dtp-link)
+(bind-key "C-c x L" 'org-set-dtp-link)
+(bind-key "C-c x m" 'org-insert-message-link)
+(bind-key "C-c x M" 'org-set-message-link)
+(bind-key "C-c x u" 'org-insert-url-link)
+(bind-key "C-c x U" 'org-set-url-link)
+(bind-key "C-c x f" 'org-insert-file-link)
+(bind-key "C-c x F" 'org-set-file-link)
+
+(org-defkey org-mode-map [(control meta return)]
+            'org-insert-heading-after-current)
+(org-defkey org-mode-map [(control return)] 'other-window)
+(org-defkey org-mode-map [return] 'org-return-indent)
+(org-defkey org-mode-map [(control ?c) (control ?x) ?@] 'visible-mode)
+(org-defkey org-mode-map [(control ?c) (meta ?m)] 'my-org-wrap-region)
+
+(remove-hook 'kill-emacs-hook 'org-babel-remove-temporary-directory)
+
+;;;_  . org-agenda-mode
+
+(let ((map org-agenda-mode-map))
+  (define-key map "\C-n" 'next-line)
+  (define-key map "\C-p" 'previous-line)
+
+  (define-key map "g" 'org-agenda-redo)
+  (define-key map "f" 'org-agenda-date-later)
+  (define-key map "b" 'org-agenda-date-earlier)
+  (define-key map "r" 'org-agenda-refile)
+  (define-key map " " 'org-agenda-tree-to-indirect-buffer)
+  (define-key map "F" 'org-agenda-follow-mode)
+  (define-key map "q" 'delete-window)
+  (define-key map [(meta ?p)] 'org-agenda-earlier)
+  (define-key map [(meta ?n)] 'org-agenda-later)
+  (define-key map "x" 'org-todo-state-map)
+
+  (define-key map ">" 'org-agenda-filter-by-top-headline))
+
+(unbind-key "M-m" org-agenda-keymap)
+
+(defadvice org-agenda-redo (after fit-windows-for-agenda-redo activate)
+  "Fit the Org Agenda to its buffer."
+  (org-fit-agenda-window))
+
+(defadvice org-agenda (around fit-windows-for-agenda activate)
+  "Fit the Org Agenda to its buffer."
+  (let ((notes (ignore-errors
+                 (directory-files
+                  "~/Dropbox/Apps/Drafts/" t "[0-9].*\\.txt\\'" nil))))
+    (when notes
+      (with-current-buffer (find-file-noselect "~/doc/tasks/todo.txt")
+        (save-excursion
+          (goto-char (point-min))
+          (re-search-forward "^\\* Inbox$")
+          (re-search-forward "^:END:")
+          (forward-line 1)
+          (dolist (note notes)
+            (insert
+             "** TODO "
+             (with-temp-buffer
+               (insert-file-contents note)
+               (goto-char (point-min))
+               (forward-line)
+               (unless (bolp))
+               (insert ?\n)
+               (insert (format "SCHEDULED: %s\n"
+                               (format-time-string (org-time-stamp-format))))
+               (goto-char (point-max))
+               (unless (bolp)
+                 (insert ?\n))
+               (let ((uuid (substring (shell-command-to-string "uuidgen") 0 -1))
+                     (file (file-name-nondirectory note)))
+                 (insert (format (concat ":PROPERTIES:\n:ID:       %s\n"
+                                         ":CREATED:  ") uuid))
+                 (string-match
+                  (concat "\\`\\([0-9]\\{4\\}\\)"
+                          "-\\([0-9]\\{2\\}\\)"
+                          "-\\([0-9]\\{2\\}\\)"
+                          "-\\([0-9]\\{2\\}\\)"
+                          "-\\([0-9]\\{2\\}\\)"
+                          "-\\([0-9]\\{2\\}\\)"
+                          "\\.txt\\'") file)
+                 (let ((year (string-to-number (match-string 1 file)))
+                       (mon (string-to-number (match-string 2 file)))
+                       (day (string-to-number (match-string 3 file)))
+                       (hour (string-to-number (match-string 4 file)))
+                       (min (string-to-number (match-string 5 file)))
+                       (sec (string-to-number (match-string 6 file))))
+                   (insert (format "[%04d-%02d-%02d %s %02d:%02d]\n:END:\n"
+                                   year mon day
+                                   (calendar-day-name (list mon day year) t)
+                                   hour min))))
+               (buffer-string)))
+            (delete-file note t)))
+        (when (buffer-modified-p)
+          (save-buffer)))))
+  ad-do-it
+  (org-fit-agenda-window))
+
+(defadvice org-archive-subtree (before set-billcode-before-archiving activate)
+  "Before archiving a task, set its BILLCODE and TASKCODE."
+  (let ((billcode (org-entry-get (point) "BILLCODE" t))
+        (taskcode (org-entry-get (point) "TASKCODE" t))
+        (project  (org-entry-get (point) "PROJECT" t)))
+    (if billcode (org-entry-put (point) "BILLCODE" billcode))
+    (if taskcode (org-entry-put (point) "TASKCODE" taskcode))
+    (if project (org-entry-put (point) "PROJECT" project))))
+
+
+;;; dot-org.el ends here
