@@ -16,7 +16,7 @@
         (nth 3 xs)
         (nth 5 xs)))))
  '(deft-auto-save-interval 0.0)
- '(deft-directory "~/Dropbox/notes")
+ '(deft-directory "~/doc/deft")
  '(deft-text-mode (quote org-mode))
  '(org-M-RET-may-split-line (quote ((headline) (default . t))))
  '(org-adapt-indentation nil)
@@ -102,9 +102,6 @@
        (org-agenda-prefix-format "%-11c%5(org-todo-age) ")))
      ("w" "Unscheduled work-related tasks" tags "TODO<>\"\"&TODO<>{DONE\\|CANCELED\\|NOTE\\|PROJECT}"
       ((org-agenda-overriding-header "Unscheduled work-related tasks")
-       (org-agenda-files
-        (quote
-         ("~/doc/tasks/BAE.txt")))
        (org-agenda-sorting-strategy
         (quote
          (todo-state-up priority-down category-up)))
@@ -133,7 +130,7 @@
  '(org-agenda-default-appointment-duration 60)
  '(org-agenda-files
    (quote
-    ("~/doc/tasks/todo.org" "~/doc/tasks/habits.org" "~/doc/tasks/emacs.org" "~/doc/tasks/OSS.org")))
+    ("~/doc/tasks/todo.org" "~/doc/tasks/habits.org" "~/doc/tasks/emacs.org")))
  '(org-agenda-fontify-priorities t)
  '(org-agenda-include-diary t)
  '(org-agenda-inhibit-startup t)
@@ -165,6 +162,10 @@
  '(org-agenda-tags-column -100)
  '(org-agenda-text-search-extra-files (quote (agenda-archives "~/doc/tasks/notes.org")))
  '(org-agenda-use-time-grid nil)
+ '(holiday-bahai-holidays nil)
+ '(holiday-hebrew-holidays nil)
+ '(holiday-islamic-holidays nil)
+
  '(org-archive-location "TODO-archive::")
  '(org-archive-save-context-info (quote (time category itags)))
  '(org-attach-method (quote mv))
@@ -218,7 +219,7 @@ SCHEDULED: %t
  '(org-clock-out-remove-zero-time-clocks t)
  '(org-clock-out-switch-to-state nil)
  '(org-clock-persist t)
- '(org-clock-persist-file "~/.emacs.d/private/data/org-clock-save.el")
+ '(org-clock-persist-file "~/.spacemacs.d/data/org-clock-save.el")
  '(org-clock-resolve-expert t)
  '(org-completion-use-ido t)
  '(org-confirm-elisp-link-function nil)

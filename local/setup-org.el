@@ -39,6 +39,11 @@
   (org-agenda-list)
   (org-fit-agenda-window)
   (org-agenda-to-appt)
+
+  (setq org-ellipsis "⬎")
+
+  
+  (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
   ;; (other-window 1)
   ;; (my-calendar)
   ;; (run-with-idle-timer
@@ -253,7 +258,7 @@
 
 (defun my-org-push-mobile ()
   (interactive)
-  (with-current-buffer (find-file-noselect "~/doc/tasks/todo.txt")
+  (with-current-buffer (find-file-noselect "~/doc/tasks/todo.org")
     (org-mobile-push)))
 
 (eval-when-compile
@@ -323,7 +328,7 @@
       (let ((tasks (buffer-string)))
         (set-buffer-modified-p nil)
         (kill-buffer (current-buffer))
-        (with-current-buffer (find-file-noselect "~/doc/tasks/todo.txt")
+        (with-current-buffer (find-file-noselect "~/doc/tasks/todo.org")
           (save-excursion
             (goto-char (point-min))
             (re-search-forward "^\\* Inbox$")
@@ -674,7 +679,7 @@ end tell"))))
                  (directory-files
                   "~/Dropbox/Apps/Drafts/" t "[0-9].*\\.txt\\'" nil))))
     (when notes
-      (with-current-buffer (find-file-noselect "~/doc/tasks/todo.txt")
+      (with-current-buffer (find-file-noselect "~/doc/tasks/todo.org")
         (save-excursion
           (goto-char (point-min))
           (re-search-forward "^\\* Inbox$")
