@@ -349,14 +349,9 @@ you should place your code here."
   (setq user-full-name "Jason Graham"
         user-mail-address "jgraham20@gmail.com")
 
-  (setq paradox-github-token "805bc3d2d3fa04949e5a80730eb4ce7fbda3e971")
-  
   ;(setq calendar-location-name "Bowling Green, KY"
   ;      calendar-latitude 36.882678
   ;      calendar-longitude -86.416158)
-  (setq sunshine-appid "70609c742d8a108f9eb0d96a875f2bbd")
-  (setq sunshine-location "42104,USA")
-  (setq sunshine-show-icons t)
 
   ;; Add a directory to our load path so that when you `load` things
   ;; below, Emacs knows where to look for the corresponding file.
