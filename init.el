@@ -51,7 +51,6 @@ values."
      osx
      git
      github
-     geolocation
      version-control
      markdown
      theming
@@ -349,6 +348,9 @@ you should place your code here."
   (setq user-full-name "Jason Graham"
         user-mail-address "jgraham20@gmail.com")
 
+  (if (memq window-system '(w32))
+      (setq dotspacemacs-smooth-scrolling nil))
+
   ;(setq calendar-location-name "Bowling Green, KY"
   ;      calendar-latitude 36.882678
   ;      calendar-longitude -86.416158)
@@ -475,7 +477,7 @@ you should place your code here."
   ;; organizer directory
   (if (memq window-system '(w32))
       (setq jsg/home-dir "C:/Users/jg186074")
-    (setq jsg/home-dir (expand-file-name "~")))
+      (setq jsg/home-dir (expand-file-name "~")))
   (setq org-directory (concat jsg/home-dir "/doc/"))
   (setq org-default-notes-file (concat org-directory "inbox.org"))
   (setq jsg/org-default-habits-file (concat org-directory "habits.org"))
