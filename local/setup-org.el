@@ -1,28 +1,24 @@
+
 ;;;_ , Org-mode
 
-(require 'cl)
-(require 'use-package)
+;;(require 'cl)
+;;(require 'use-package)
 
-(load "org-settings")
-(load "org-smart-capture")
+;;(load "org-settings")
+;;(load "org-smart-capture")
 
-(require 'org)
-(require 'org-agenda)
-(require 'org-crypt)
-(require 'org-bbdb)
-(require 'ob-python)
-(require 'ob-ruby)
-(require 'ob-emacs-lisp)
-(require 'ob-haskell)
-(require 'ob-sh)
-(require 'ox-md)
-
-(defconst my-org-soft-red    "#fcebeb")
-(defconst my-org-soft-orange "#fcf5eb")
-(defconst my-org-soft-yellow "#fcfceb")
-(defconst my-org-soft-green  "#e9f9e8")
-(defconst my-org-soft-blue   "#e8eff9")
-(defconst my-org-soft-purple "#f3e8f9")
+;; (require 'org)
+;; (require 'org-agenda)
+;; (require 'org-crypt)
+;; (require 'org-bbdb)
+;; (require 'ob-python)
+;; (require 'ob-ruby)
+;; (require 'ob-restclient)
+;; (require 'ob-clojure)
+;; (require 'ob-emacs-lisp)
+;; (require 'ob-haskell)
+;; (require 'ob-sh)
+;; (require 'ox-md)
 
 (declare-function cfw:open-calendar-buffer "calfw")
 (declare-function cfw:refresh-calendar-buffer "calfw")
@@ -42,25 +38,29 @@
 
   (setq org-ellipsis "⬎")
 
-  
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((restclient . t)))
+
+
   (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
-  ;; (other-window 1)
-  ;; (my-calendar)
-  ;; (run-with-idle-timer
-  ;;  0.1 nil
-  ;;  (lambda ()
-  ;;    (let ((wind (get-buffer-window "*Org Agenda*")))
-  ;;      (when wind
-  ;;        (set-frame-selected-window nil wind)
-  ;;        (call-interactively #'org-agenda-redo)))
-  ;;    (let ((wind (get-buffer-window "*cfw-calendar*")))
-  ;;      (when wind
-  ;;        (set-frame-selected-window nil wind)
-  ;;        (call-interactively #'cfw:refresh-calendar-buffer)))
-  ;;    (let ((wind (get-buffer-window "*Org Agenda*")))
-  ;;      (when wind
-  ;;        (set-frame-selected-window nil wind)
-  ;;        (call-interactively #'org-resolve-clocks)))))
+  (other-window 1)
+  (my-calendar)
+  (run-with-idle-timer
+   0.1 nil
+   (lambda ()
+     (let ((wind (get-buffer-window "*Org Agenda*")))
+       (when wind
+         (set-frame-selected-window nil wind)
+         (call-interactively #'org-agenda-redo)))
+     (let ((wind (get-buffer-window "*cfw-calendar*")))
+       (when wind
+         (set-frame-selected-window nil wind)
+         (call-interactively #'cfw:refresh-calendar-buffer)))
+     (let ((wind (get-buffer-window "*Org Agenda*")))
+       (when wind
+         (set-frame-selected-window nil wind)
+         (call-interactively #'org-resolve-clocks)))))
   )
 
 (defun my-calendar ()
@@ -727,15 +727,5 @@ end tell"))))
           (save-buffer)))))
   ad-do-it
   (org-fit-agenda-window))
-
-(defadvice org-archive-subtree (before set-billcode-before-archiving activate)
-  "Before archiving a task, set its BILLCODE and TASKCODE."
-  (let ((billcode (org-entry-get (point) "BILLCODE" t))
-        (taskcode (org-entry-get (point) "TASKCODE" t))
-        (project  (org-entry-get (point) "PROJECT" t)))
-    (if billcode (org-entry-put (point) "BILLCODE" billcode))
-    (if taskcode (org-entry-put (point) "TASKCODE" taskcode))
-    (if project (org-entry-put (point) "PROJECT" project))))
-
 
 ;;; dot-org.el ends here

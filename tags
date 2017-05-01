@@ -1,0 +1,6 @@
+!_TAG_FILE_SORTED	2	/0=unsorted, 1=sorted, 2=foldcase/
+dotspacemacs/emacs-custom-settings	/Users/Jason/Projects/spacemacs-private/init.el	/^(defun dotspacemacs\/emacs-custom-settings ()$/;"	f	language:Lisp
+dotspacemacs/init	/Users/Jason/Projects/spacemacs-private/init.el	/^(defun dotspacemacs\/init ()$/;"	f	language:Lisp
+dotspacemacs/layers	/Users/Jason/Projects/spacemacs-private/init.el	/^(defun dotspacemacs\/layers ()$/;"	f	language:Lisp
+dotspacemacs/user-config	/Users/Jason/Projects/spacemacs-private/init.el	/^(defun dotspacemacs\/user-config ()$/;"	f	language:Lisp
+dotspacemacs/user-init	/Users/Jason/Projects/spacemacs-private/init.el	/^(defun dotspacemacs\/user-init ()$/;"	f	language:Lisp

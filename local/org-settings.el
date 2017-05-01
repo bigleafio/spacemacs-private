@@ -178,11 +178,13 @@
  '(org-beamer-frame-default-options "fragile")
  '(org-capture-templates
    (quote
-    (("a" "Add Task" entry
+    (("w" "Add Work Task" entry
       (file+headline "~/doc/tasks/todo.org" "Inbox")
       "* TODO %?
 SCHEDULED: %t
 :PROPERTIES:
+:CLIENT:
+:TICKET:
 :ID:       %(shell-command-to-string \"uuidgen\"):CREATED:  %U
 :END:" :prepend t)
      ("n" "Note" entry
@@ -329,18 +331,18 @@ SCHEDULED: %t
   ("\\`bug#\\([0-9]+\\):" . "[[x-debbugs-gnu:\\1][#\\1]]"))))
  '(org-tags-column -97)
  '(org-time-clocksum-use-fractional t)
- '(org-todo-keyword-faces
-(quote
- (("TODO" :foreground "medium blue" :weight bold)
-  ("APPT" :foreground "medium blue" :weight bold)
-  ("NOTE" :foreground "brown" :weight bold)
-  ("STARTED" :foreground "dark orange" :weight bold)
-  ("WAITING" :foreground "red" :weight bold)
-  ("DELEGATED" :foreground "dark violet" :weight bold)
-  ("DEFERRED" :foreground "dark blue" :weight bold)
-  ("SOMEDAY" :foreground "dark blue" :weight bold)
-  ("PROJECT" :foreground "#088e8e" :weight bold))))
- '(org-todo-repeat-to-state "TODO")
+ ;; '(org-todo-keyword-faces
+;; (quote
+;;  (("TODO" :foreground "medium blue" :weight bold)
+;;   ("APPT" :foreground "medium blue" :weight bold)
+;;   ("NOTE" :foreground "brown" :weight bold)
+;;   ("STARTED" :foreground "dark orange" :weight bold)
+;;   ("WAITING" :foreground "red" :weight bold)
+;;   ("DELEGATED" :foreground "dark violet" :weight bold)
+;;   ("DEFERRED" :foreground "dark blue" :weight bold)
+;;   ("SOMEDAY" :foreground "dark blue" :weight bold)
+;;   ("PROJECT" :foreground "#088e8e" :weight bold))))
+  '(org-todo-repeat-to-state "TODO")
  '(org-use-property-inheritance (quote ("AREA")))
  '(org-use-speed-commands t)
  '(org-use-tag-inheritance nil)

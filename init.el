@@ -11,7 +11,7 @@ values."
    ;; Base distribution to use. This is a layer contained in the directory
    ;; `+distribution'. For now available distributions are `spacemacs-base'
    ;; or `spacemacs'. (default 'spacemacs)
-   dotspacemacs-distribution 'spacemacs-base
+   dotspacemacs-distribution 'spacemacs
    ;; Lazy installation of layers (i.e. layers are installed only when a file
    ;; with a supported type is opened). Possible values are `all', `unused'
    ;; and `nil'. `unused' will lazy install only unused layers (i.e. layers
@@ -37,7 +37,7 @@ values."
      ;; Uncomment some layer names and press <SPC f e R> (Vim style) or
      ;; <M-m f e R> (Emacs style) to install them.
      ;; ----------------------------------------------------------------
-     
+
      helm
      evil-commentary
      evil-snipe
@@ -51,10 +51,13 @@ values."
      osx
      git
      github
+     geolocation
      version-control
      markdown
      theming
      org
+     (restclient :variables
+                 restclient-use-org t)
      (shell :variables
              shell-default-height 30
              shell-default-position 'bottom)
@@ -153,13 +156,13 @@ values."
    ;; List of themes, the first of the list is loaded when spacemacs starts.
    ;; Press <SPC> T n to cycle to the next theme in the list (works great
    ;; with 2 themes variants, one dark and one light)
-   dotspacemacs-themes '(sanityinc-tomorrow-night
+   dotspacemacs-themes '(gruvbox
                          leuven)
    ;; If non nil the cursor color matches the state color in GUI Emacs.
    dotspacemacs-colorize-cursor-according-to-state t
    ;; Default font, or prioritized list of fonts. `powerline-scale' allows to
    ;; quickly tweak the mode-line size to make separators look not too crappy.
-   dotspacemacs-default-font '("Consolas"
+   dotspacemacs-default-font '("Source Code Pro"
                                :size 14
                                :weight normal
                                :width normal
@@ -336,35 +339,267 @@ This is the place where most of your configurations should be done. Unless it is
 explicitly specified that a variable should be set before a package is loaded,
 you should place your code here."
 
+
+  ;; Don't litter my init file
+  (setq custom-file "~/.spacemacs.d/local/custom.el")
+  (load custom-file 'noerror)
   ;;;;
   ;; Customization
   ;;;;
   (setq user-full-name "Jason Graham"
         user-mail-address "jgraham20@gmail.com")
+
+  (setq paradox-github-token "805bc3d2d3fa04949e5a80730eb4ce7fbda3e971")
+  
+  ;(setq calendar-location-name "Bowling Green, KY"
+  ;      calendar-latitude 36.882678
+  ;      calendar-longitude -86.416158)
+  (setq sunshine-appid "70609c742d8a108f9eb0d96a875f2bbd")
+  (setq sunshine-location "42104,USA")
+  (setq sunshine-show-icons t)
+
   ;; Add a directory to our load path so that when you `load` things
   ;; below, Emacs knows where to look for the corresponding file.
   (add-to-list 'load-path "~/.spacemacs.d/local/")
   (add-to-list 'load-path "~/.secret/")
 
-  ;;Keybindings
-  (spacemacs/set-leader-keys "]" 'spacemacs/cycle-spacemacs-theme)
+  (setq powerline-default-separator 'arrow)
 
-  ;; Sets up exec-path-from-shell so that Emacs will use the correct
-  ;; environment custom-set-variables 
   (load "secret.el")
-  (load "shell-integration.el")
 
-  (load "setup-clojure.el")
+  ;; Sets up exec-path-from shell
+  ;; https://github.com/purcell/exec-path-from-shell
+  (when (memq window-system '(mac ns))
+    (exec-path-from-shell-initialize))
 
-  (load "setup-org.el")
+  (jsg/configure-org-mode)
 
-  (load "org-mouse")
+  ;; Key binding to use "hippie expand" for text autocompletion
+  ;; http://www.emacswiki.org/emacs/HippieExpand
+  (global-set-key (kbd "M-/") 'hippie-expand)
 
-  (load "ui.el")
+  ;; Lisp-friendly hippie expand
+  (setq hippie-expand-try-functions-list
+      '(try-expand-dabbrev
+        try-expand-dabbrev-all-buffers
+        try-expand-dabbrev-from-kill
+        try-complete-lisp-symbol-partially
+        try-complete-lisp-symbol))
 
-  (load "editing.el")
+  ;; Highlights matching parenthesis
+  (show-paren-mode 1)
 
-  (load "elisp-editing.el")
+  ;; Highlight current line
+  (global-hl-line-mode 1)
+  ;; When you visit a file, point goes to the last place where it
+  ;; was when you previously visited the same file.
+	;; http://www.emacswiki.org/emacs/SavePlace
+	(require 'saveplace)
+	(setq-default save-place t)
+	;; keep track of saved places in ~/.emacs.d/places
+	(setq save-place-file (concat user-emacs-directory "places"))
+;; Emacs can automatically create backup files. This tells Emacs to
+;; put all backups in ~/.emacs.d/backups. More info:
+;; http://www.gnu.org/software/emacs/manual/html_node/elisp/Backup-Files.html
+(setq backup-directory-alist `(("." . ,(concat user-emacs-directory
+                                               "backups"))))
+(setq delete-old-versions -1)
+(setq version-control t)
+(setq vc-make-backup-files t)
+(setq auto-save-file-name-transforms '((".*" "~/.emacs.d/private/auto-save-list/" t)))
+
+(setq savehist-file "~/.emacs.d/private/savehist")
+(savehist-mode 1)
+(setq history-length t)
+(setq history-delete-duplicates t)
+(setq savehist-save-minibuffer-history 1)
+(setq savehist-additional-variables
+      '(kill-ring
+        search-ring
+        regexp-search-ring))
+
+;; yasnippet
+;; http://www.emacswiki.org/emacs/Yasnippet
+(yas-global-mode 1)
+
+;; yay rainbows!
+(add-hook 'prog-mode-hook #'rainbow-delimiters-mode)
+
+;; use 2 spaces for tabs
+(defun die-tabs ()
+  (interactive)
+  (set-variable 'tab-width 2)
+  (mark-whole-buffer)
+  (untabify (region-beginning) (region-end))
+  (keyboard-quit))
+
+  (autoload 'enable-paredit-mode "paredit" "Turn on pseudo-structural editing of Lisp code." t)
+  (add-hook 'emacs-lisp-mode-hook       #'enable-paredit-mode)
+  (add-hook 'eval-expression-minibuffer-setup-hook #'enable-paredit-mode)
+  (add-hook 'ielm-mode-hook             #'enable-paredit-mode)
+  (add-hook 'lisp-mode-hook             #'enable-paredit-mode)
+  (add-hook 'lisp-interaction-mode-hook #'enable-paredit-mode)
+  (add-hook 'scheme-mode-hook           #'enable-paredit-mode)
+
+  ;; eldoc-mode shows documentation in the minibuffer when writing code
+  ;; http://www.emacswiki.org/emacs/ElDoc
+  (add-hook 'emacs-lisp-mode-hook 'turn-on-eldoc-mode)
+  (add-hook 'lisp-interaction-mode-hook 'turn-on-eldoc-mode)
+  (add-hook 'ielm-mode-hook 'turn-on-eldoc-mode)
+)
+
+(defun jsg/configure-org-mode ()
+  (require 'org-checklist)
+
+  (add-hook 'org-mode-hook 'turn-on-auto-fill)
+  (add-hook 'org-mode-hook 'flyspell-mode)
+
+  ;; settings
+  (add-to-list 'auto-mode-alist '("\\.\\(org\\|org_archive\\|org\\.txt\\)$" . org-mode))
+  (setq org-startup-indented t)
+  (setq org-cycle-separator-lines 1)
+  (setq org-blank-before-new-entry '((heading . t) (plain-list-item . nil)))
+  (setq org-agenda-file-regexp "\\`[^.].*\\.\\(org\\.txt\\|org\\)\\'")
+  (setq org-clock-idle-time 15)
+  (setq org-ellipsis " ▼") ;; http://endlessparentheses.com/changing-the-org-mode-ellipsis.html
+
+  ;; todos
+  (setq org-todo-keywords
+        (quote ((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d)")
+                (sequence "WAITING(w@/!)" "HOLD(h@/!)" "|" "CANCELLED(c@/!)" "PHONE" "MEETING"))))
+
+  (setq org-todo-state-tags-triggers
+        (quote (("CANCELLED" ("CANCELLED" . t))
+                ("WAITING" ("WAITING" . t))
+                ("HOLD" ("WAITING") ("HOLD" . t))
+                (done ("WAITING") ("HOLD"))
+                ("TODO" ("WAITING") ("CANCELLED") ("HOLD"))
+                ("NEXT" ("WAITING") ("CANCELLED") ("HOLD"))
+                ("DONE" ("WAITING") ("CANCELLED") ("HOLD")))))
+
+  ;; organizer directory
+  (if (memq window-system '(w32))
+      (setq jsg/home-dir "C:/Users/jg186074")
+    (setq jsg/home-dir (expand-file-name "~")))
+  (setq org-directory (concat jsg/home-dir "/doc/"))
+  (setq org-default-notes-file (concat org-directory "inbox.org"))
+  (setq jsg/org-default-habits-file (concat org-directory "habits.org"))
+
+  ;; agenda
+  (setq org-agenda-files (list org-directory))
+  (setq org-agenda-skip-scheduled-if-done t)
+  (setq org-agenda-skip-deadline-if-done t)
+
+  ;; tags
+  ;; Tags with fast selection keys
+  (setq org-tag-alist (quote ((:startgroup)
+                              ("@errand" . ?e)
+                              ("@office" . ?o)
+                              ("@home" . ?H)
+                              (:endgroup)
+                              ("WAITING" . ?w)
+                              ("HOLD" . ?h)
+                              ("IDEA" . ?i)
+                              ("PERSONAL" . ?P)
+                              ("DRAFT" . ?D)
+                              ("WORK" . ?W)
+                              ("NOTE" . ?n)
+                              ("CANCELLED" . ?c)
+                              ("FLAGGED" . ??))))
+
+  ;; capture
+  (setq org-capture-templates
+        (quote (("w" "Add Work Task" entry
+      (file+headline "~/doc/todo.org" "Inbox")
+      "* TODO %? \n:SCHEDULED: %t \n:PROPERTIES:
+:CLIENT: \n:TICKET:
+:ID:       %(shell-command-to-string \"uuidgen\"):CREATED:  %U
+:END:" :prepend t)
+        	     ("t" "todo" entry (file org-default-notes-file)
+                 "* TODO %?\n%U\n%a
+:ID:       %(shell-command-to-string \"uuidgen\")
+:CREATED:  %U
+:END:" :prepend t)
+                ("m" "meeting" entry (file org-default-notes-file)
+"* MEETING with %? :MEETING:\n%U
+:ID:       %(shell-command-to-string \"uuidgen\")
+:CREATED:  %U \n:END:" :prepend t)
+                ("i" "idea" entry (file org-default-notes-file)
+                 "* %? :IDEA:\n%U\n%a
+:ID:       %(shell-command-to-string \"uuidgen\")
+:CREATED:  %U\n:END:" :prepend t)
+                ("n" "note" entry (file org-default-notes-file)
+                 "* %? :NOTE:\n%U\n%a
+:ID:       %(shell-command-to-string \"uuidgen\")
+:CREATED:  %U \n:END:" :prepend t)
+                ("h" "habit" entry (file jsg/org-default-notes-file)
+                 "* NEXT %?\n%U\n%a\nSCHEDULED: %(format-time-string \"%<<%Y-%m-%d %a .+1d/3d>>\")\n:PROPERTIES:\n:STYLE: habit\n:REPEAT_TO_STATE: NEXT\n
+:END:" :prepend t)
+     ("c" "Calendar" entry
+      (file+headline "~/doc/todo.org" "Inbox")
+      "* APPT %? \n:SCHEDULED: %t
+:PROPERTIES: \n:ID:       %(shell-command-to-string \"uuidgen\")
+:CREATED:  %U \n:END:" :prepend t)
+      ("J" "Journal entry with date" plain
+         (file+datetree+prompt "~/doc/journal.org")
+         "%K - %a\n%i\n%?\n"
+         :unnarrowed t))))
+
+  ;; refiling
+  (setq org-refile-targets (quote ((nil :maxlevel . 9)
+                                   (org-agenda-files :maxlevel . 9))))
+
+  ;; pomodoro
+  (add-hook 'org-pomodoro-finished-hook (lambda()
+                                          (org-journal-new-entry nil)
+                                          ))
+
+  '(org-agenda-files
+   (quote
+    ("~/doc/tasks/todo.org" "~/doc/tasks/habits.org" "~/doc/tasks/emacs.org")))
+
+   (setq org-agenda-text-search-extra-files '(agenda-archives))
+
+	(setq org-blank-before-new-entry (quote ((heading) (plain-list-item))))
+
+	(setq org-enforce-todo-dependencies t)
+
+	(setq org-log-done (quote time))
+
+	(setq org-log-redeadline (quote time))
+
+	(setq org-log-reschedule (quote time))
+
+	(org-babel-do-load-languages
+     'org-babel-load-languages
+     '((restclient . t)
+       (clojure . t)))
+
+      (load "org-mouse")
+      (require 'org-bullets)
+      (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
+
+      (setq org-confirm-babel-evaluate nil)
+
   )
 
-
+(defun dotspacemacs/emacs-custom-settings ()
+  "Emacs custom settings.
+This is an auto-generated function, do not modify its content directly, use
+Emacs customize menu instead.
+This function is called at the very end of Spacemacs initialization."
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(package-selected-packages
+   (quote
+    (evil-nerd-commenter define-word xterm-color ws-butler winum which-key volatile-highlights vi-tilde-fringe uuidgen use-package unfill toc-org theme-changer symon sunshine string-inflection spaceline smeargle shell-pop reveal-in-osx-finder restclient-helm restart-emacs rase rainbow-delimiters popwin persp-mode pcre2el pbcopy paradox osx-trash osx-location osx-dictionary orgit org-sticky-header org-projectile org-present org-pomodoro org-gcal org-download org-bullets open-junk-file ob-restclient ob-http neotree mwim multi-term move-text mmm-mode markdown-toc magithub magit-gitflow magit-gh-pulls macrostep lorem-ipsum linum-relative link-hint launchctl keyfreq info+ indent-guide ibuffer-projectile hungry-delete htmlize hl-todo highlight-parentheses highlight-numbers highlight-indentation hide-comnt help-fns+ helm-themes helm-swoop helm-purpose helm-projectile helm-mode-manager helm-make helm-gitignore helm-flx helm-descbinds helm-company helm-c-yasnippet helm-ag gruvbox-theme google-translate golden-ratio gnuplot github-search github-clone gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link git-gutter-fringe git-gutter-fringe+ gist gh-md fuzzy focus flyspell-correct-helm flycheck-pos-tip flx-ido fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-snipe evil-search-highlight-persist evil-numbers evil-mc evil-matchit evil-magit evil-lisp-state evil-indent-plus evil-iedit-state evil-exchange evil-escape evil-ediff evil-commentary evil-args evil-anzu eshell-z eshell-prompt-extras esh-help elisp-slime-nav dumb-jump dired-toggle dired-ranger dired-details dired+ diff-hl deft company-statistics company-restclient column-enforce-mode clojure-snippets clj-refactor clean-aindent-mode cider-eval-sexp-fu calfw browse-at-remote auto-yasnippet auto-highlight-symbol auto-dictionary auto-compile aggressive-indent adaptive-wrap ace-window ace-link ace-jump-helm-line ac-ispell))))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
+)
