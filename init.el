@@ -476,8 +476,11 @@ you should place your code here."
 (setq blink-matching-paren nil)
 (paren-activate)
 (setq paren-match-face 'mode-line)
-
+(menu-bar-mode 1)
 (jsg/configure-eshell)
+(jsg/configure-org-mode)
+(jsg/configure-navi-mode)
+(jsg/configure-outshine)
 
 )
 
@@ -677,3 +680,157 @@ you should place your code here."
        (set-eshell-prompt-icon esh-prompt esh-prompt-face))))
 
   (setq eshell-prompt-function 'esh-prompt-function))
+
+(defun jsg/configure-navi-mode ()
+  "Navi mode bar vim bindings and improvements."
+
+  (require 'navi-mode)
+
+  (add-to-list 'navi-key-mappings
+               '("python" .
+                 ((:FUN . "f")
+                  (:OBJ . "x"))))
+  (add-to-list 'navi-keywords
+               '("python" .
+                 ((:FUN . "\\(^[ ]*def[a-zA-Z0-9_ ]*\\|^[ ]*class[a-zA-Z0-9_ ]*\\)")
+                  (:OBJ . "^[ ]*\\(class[a-zA-Z0-9_ ]*\\)"))))
+
+  (defun my-outline-show-context ()
+    "Helper utility for evil navi bindings."
+    (interactive)
+    (outline-show-entry)
+    (outline-show-branches))
+
+  (let ((map (make-sparse-keymap)))
+    ;; Cycle Navi
+    (define-key map (kbd "TAB") 'navi-cycle-subtree)
+    (define-key map (kbd "<backtab>") 'navi-cycle-buffer)
+    ;; Modify subtree hierarchy
+    (define-key map (kbd "M-h") 'navi-promote-subtree)
+    (define-key map (kbd "M-j") 'navi-move-down-subtree)
+    (define-key map (kbd "M-k") 'navi-move-up-subtree)
+    (define-key map (kbd "M-l") 'navi-demote-subtree)
+    ;; another way to exit
+    (define-key map (kbd "M-n") 'spacemacs/delete-window)
+
+    ;; Custom vim bindings for navi-mode
+    ;; Also fixes various bugs related to narrowing/context/scrolling
+    (evil-define-key '(normal visual motion) map
+      "f" (lambda () (interactive) (navi-generic-command ?f current-prefix-arg))
+      "v" (lambda () (interactive) (navi-generic-command ?v current-prefix-arg))
+      "x" (lambda () (interactive) (navi-generic-command ?x current-prefix-arg))
+      "a" (lambda () (interactive) (navi-generic-command ?a current-prefix-arg))
+
+      "1" (lambda () (interactive) (navi-generic-command ?1 current-prefix-arg))
+      "2" (lambda () (interactive) (navi-generic-command ?2 current-prefix-arg))
+      "3" (lambda () (interactive) (navi-generic-command ?3 current-prefix-arg))
+      "4" (lambda () (interactive) (navi-generic-command ?4 current-prefix-arg))
+
+      ;; Narrow on occurrence
+      "n" (lambda () (interactive)
+            (navi-narrow-to-thing-at-point)
+            (other-window 1)
+            (my-outline-show-context)
+            (other-window 1))
+      ;; Open occurence but do not goto
+      "d" (lambda () (interactive)
+            (occur-mode-display-occurrence)
+            (other-window 1)
+            (my-outline-show-context)
+            (recenter 3)
+            (other-window 1))
+      ;; Open and goto occurrence. Capital for closing navi
+      "o" (lambda () (interactive)
+            (navi-goto-occurrence-other-window)
+            (my-outline-show-context)
+            (recenter 3))
+      "O" (lambda () (interactive)
+            (navi-goto-occurrence-other-window)
+            (delete-other-windows)
+            (my-outline-show-context)
+            (recenter 3))
+      ;; Exit Navi
+      "q" 'spacemacs/delete-window
+      ;; Widen narrowed navi buffer
+      "w" 'navi-widen
+      ;; Undo modifications to headers done within navi buffer
+      "u" 'navi-undo)
+
+    (setq navi-mode-map map)))
+
+;;;; Outshine-mode
+
+(defun jsg/configure-outshine ()
+  "Outline/Outshine mode bindings and Navi integration."
+
+  (require 'outshine)
+
+  (defun my-outshine-navi ()
+    "Enhanced narrowing and popwin-like functionality to start navi mode."
+    (interactive)
+    (let ((line nil))
+      (widen)  ; Otherwise broken on narrowed buffers
+      (save-excursion
+        (unless (outline-on-heading-p t)
+          (outline-previous-visible-heading 1))
+        (setq line
+              (replace-regexp-in-string "\n$" ""
+                                        (thing-at-point 'line t))))
+      ;; window stuff
+      (split-window-below)
+      (outshine-navi)
+      (evil-window-move-far-left)
+      (shrink-window-horizontally (- (window-width) 35))
+      ;; default to 3 heading levels
+      (navi-generic-command ?3 nil)
+      (search-forward-regexp line)))
+
+  (define-key org-mode-map (kbd "M-n") 'my-outshine-navi)
+
+  ;; Outline minor mode vim keybindings
+  (let ((map outline-minor-mode-map))
+    ;; Core functions
+    (define-key map (kbd "M-n") 'my-outshine-navi)
+    (define-key map (kbd "<backtab>") 'outshine-cycle-buffer)
+    (define-key map (kbd "M-h") 'outline-promote)
+    (define-key map (kbd "M-l") 'outline-demote)
+
+    ;; Insert Heading
+    (define-key map (kbd "M-RET") 'outshine-insert-heading)
+    ;; Insert Subheading
+    (define-key map (kbd "C-M-<return>")
+      (lambda ()
+        (interactive)
+        (let ((line nil) (str nil))
+          (save-excursion
+            (outline-previous-visible-heading 1)
+            (setq level (outshine-calc-outline-level))
+            (setq str (outshine-calc-outline-string-at-level (+ 1 level))))
+          (evil-unimpaired/insert-space-below 1)
+          (evil-next-line 1)
+          (insert str))))
+
+    ;; Bring org-mode g-based evil navigation to outline-minor-mode
+    (evil-define-key '(normal visual motion) map
+      "gh" 'outline-up-heading
+      "gj" 'outline-forward-same-level
+      "gk" 'outline-backward-same-level
+      "gl" 'outline-next-visible-heading
+      "gu" 'outline-previous-visible-heading
+
+      ;; Narrows buffer without needing to have cursor on heading
+      (kbd "SPC n n") (lambda ()
+                        (interactive)
+                        (save-excursion
+                          (unless (outline-on-heading-p t)
+                            (outline-previous-visible-heading 1))
+                          (outshine-narrow-to-subtree)))
+      (kbd "SPC n j") 'outline-move-subtree-down
+      (kbd "SPC n k") 'outline-move-subtree-up))
+
+  (setq outshine-use-speed-commands t)
+
+  ;; Required for outshine
+  (add-hook 'outline-minor-mode-hook 'outshine-hook-function)
+  ;; Enables outline-minor-mode for *ALL* programming buffers!
+  (add-hook 'prog-mode-hook 'outline-minor-mode))
