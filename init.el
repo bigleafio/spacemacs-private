@@ -37,13 +37,24 @@ values."
      ;; Uncomment some layer names and press <SPC f e R> (Vim style) or
      ;; <M-m f e R> (Emacs style) to install them.
      ;; ----------------------------------------------------------------
+    
 
      helm
-     ;;evil-commentary
-     ;;evil-snipe
-     auto-completion
+     evil-commentary
+     (evil-snipe :variables
+                    evil-snipe-enable-alternate-f-and-t-behaviors t)
+     ;;(ivy :variables
+     ;;        ivy-extra-directories nil)
+
+    (auto-completion :variables
+                         auto-completion-return-key-behavior 'complete
+                         auto-completion-tab-key-behavior 'complete
+                         auto-completion-enable-snippets-in-popup t)
+
      (ibuffer :variables ibuffer-group-buffers-by 'projects)
-     clojure
+     
+     (clojure :variables
+              clojure-enable-fancify-symbols t)
      emacs-lisp
      deft
      osx
@@ -57,8 +68,8 @@ values."
      (restclient :variables
                  restclient-use-org t)
      (shell :variables
-             shell-default-height 30
-             shell-default-position 'bottom)
+             shell-default-shell 'eshell)
+
      version-control
      xkcd
      )
@@ -74,6 +85,24 @@ values."
                                       org-gcal
                                       calfw
                                       lispy
+                                      outshine                 ; Required for navi-mode
+                                      navi-mode                ; Navbar on buffer outlines
+
+                                      ;; Org
+                                      org-gcal                 ; google calendar syncing
+                                      org-vcard                ; Import/export google contacts
+
+                                      ;; Misc
+                                      helm-spotify-plus        ; Spotify improvements
+                                      virtualenvwrapper        ; Python environment management
+
+                                      ;; Visual Enhancements
+                                      all-the-icons-ivy        ; Ivy prompts use file icons
+                                      pretty-mode              ; Adds onto prettify-mode
+                                      spaceline-all-the-icons  ; Spaceline integrates file and other icons
+                                      (prettify-utils          ; Useful add pretty symbols macro
+                                       :location (recipe :fetcher github
+                                                         :repo "Ilazki/prettify-utils.el"))
      )
    ;; A list of packages that cannot be updated.
    dotspacemacs-frozen-packages '()
@@ -330,8 +359,8 @@ layers configuration.
 This is the place where most of your configurations should be done. Unless it is
 explicitly specified that a variable should be set before a package is loaded,
 you should place your code here."
-
-  (setq inhibit-compacting-font-caches t)
+  (setq custom-file "~.emacs.d/private/.custom-settings.el")
+  ;;(setq inhibit-compacting-font-caches t)
 
   ;; Customization
   ;;;;
@@ -447,6 +476,8 @@ you should place your code here."
 (setq blink-matching-paren nil)
 (paren-activate)
 (setq paren-match-face 'mode-line)
+
+(jsg/configure-eshell)
 
 )
 
@@ -584,23 +615,65 @@ you should place your code here."
       (setq org-confirm-babel-evaluate nil)
 
   )
-(defun dotspacemacs/emacs-custom-settings ()
-  "Emacs custom settings.
-This is an auto-generated function, do not modify its content directly, use
-Emacs customize menu instead.
-This function is called at the very end of Spacemacs initialization."
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(package-selected-packages
-   (quote
-    (mic-paren color-theme-solarized color-theme sublimity xkcd zonokai-theme zenburn-theme zen-and-art-theme ws-butler winum white-sand-theme volatile-highlights vi-tilde-fringe uuidgen underwater-theme ujelly-theme twilight-theme twilight-bright-theme twilight-anti-bright-theme tronesque-theme toxi-theme tao-theme tangotango-theme tango-plus-theme tango-2-theme symon sunny-day-theme sublime-themes subatomic256-theme subatomic-theme string-inflection spaceline powerline spacegray-theme soothe-theme solarized-theme soft-stone-theme soft-morning-theme soft-charcoal-theme smyx-theme seti-theme reverse-theme restclient-helm restart-emacs rebecca-theme rainbow-delimiters railscasts-theme purple-haze-theme professional-theme popwin planet-theme phoenix-dark-pink-theme phoenix-dark-mono-theme persp-mode pastels-on-dark-theme password-generator paradox organic-green-theme org-sticky-header org-gcal request-deferred deferred open-junk-file omtose-phellack-theme oldlace-theme occidental-theme obsidian-theme ob-restclient ob-http noctilux-theme niflheim-theme neotree naquadah-theme mustang-theme move-text monokai-theme monochrome-theme molokai-theme moe-theme minimal-theme material-theme majapahit-theme magithub ghub+ apiwrap ghub magit-gh-pulls madhat2r-theme lush-theme lorem-ipsum lispy zoutline swiper ivy linum-relative link-hint light-soap-theme jbeans-theme jazz-theme ir-black-theme inkpot-theme info+ indent-guide ibuffer-projectile hungry-delete hl-todo highlight-parentheses highlight-numbers parent-mode highlight-indentation hide-comnt heroku-theme hemisu-theme helm-purpose window-purpose imenu-list hc-zenburn-theme gruvbox-theme gruber-darker-theme grandshell-theme gotham-theme google-translate golden-ratio github-search github-clone gist gh marshal logito pcache ht gandalf-theme flx-ido flatui-theme flatland-theme firebelly-theme fill-column-indicator farmhouse-theme fancy-battery eyebrowse expand-region evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-search-highlight-persist evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state smartparens evil-lion evil-indent-plus evil-iedit-state iedit evil-exchange evil-ediff evil-args evil-anzu anzu espresso-theme editorconfig dumb-jump dracula-theme django-theme darktooth-theme darkokai-theme darkmine-theme darkburn-theme dakrone-theme cyberpunk-theme company-restclient restclient know-your-http-well column-enforce-mode color-theme-sanityinc-solarized clues-theme clean-aindent-mode cherry-blossom-theme calfw busybee-theme bubbleberry-theme birds-of-paradise-plus-theme badwolf-theme autothemer auto-highlight-symbol apropospriate-theme anti-zenburn-theme ample-zen-theme ample-theme alect-themes aggressive-indent afternoon-theme adaptive-wrap ace-link xterm-color which-key use-package unfill toc-org smeargle shell-pop selectric-mode sayid reveal-in-osx-finder pcre2el pbcopy osx-trash osx-dictionary orgit org-projectile org-present org-pomodoro org-download org-bullets mwim multi-term mmm-mode markdown-toc magit-gitflow macrostep launchctl keyfreq htmlize help-fns+ helm-themes helm-swoop helm-projectile helm-mode-manager helm-make helm-gitignore helm-flx helm-descbinds helm-company helm-c-yasnippet helm-ag gnuplot gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link git-gutter-fringe git-gutter-fringe+ gh-md fuzzy focus flyspell-correct-helm flycheck-pos-tip exec-path-from-shell evil-visualstar evil-snipe evil-org evil-magit evil-escape evil-commentary eshell-z eshell-prompt-extras esh-help elisp-slime-nav diff-hl deft company-statistics color-theme-sanityinc-tomorrow clojure-snippets clj-refactor cider-eval-sexp-fu browse-at-remote bind-map auto-yasnippet auto-dictionary auto-compile ace-window ace-jump-helm-line ac-ispell))))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
-)
+
+(defun jsg/configure-eshell ()
+  "Eshell prettification."
+
+  (setq eshell-prompt-number 0)
+  (add-hook 'eshell-exit-hook (lambda () (setq eshell-prompt-number 0)))
+  (advice-add 'eshell-send-input :before
+              (lambda (&rest args)
+                (setq eshell-prompt-number (+ 1 eshell-prompt-number))))
+
+  (defmacro with-face (STR &rest PROPS)
+    "Return STR propertized with PROPS."
+    `(propertize ,STR 'face (list ,@PROPS)))
+
+  (defun set-eshell-prompt-icon (ICON PROPS)
+    "Update eshell prompt with ICON propertized with PROPS."
+    (let ((prompt (concat ICON " ")))
+      (setq eshell-prompt-regexp prompt)
+      (concat "\n" (with-face prompt PROPS))))
+
+  (defun eshell-section (ICON STR &rest PROPS)
+    "Return eshell section string with ICON header for STR with PROPS."
+    (when STR
+      (with-face (concat ICON " " STR) PROPS)))
+
+  (defun esh-prompt-function ()
+    "Custom `eshell-prompt-function'."
+    (let* ((esh-header "\n ")
+           (esh-header-face nil)
+           (esh-prompt "")
+           (esh-prompt-face nil)
+           (esh-sep " | ")
+           (esh-sep-face nil)
+
+           (esh-dir-section (abbreviate-file-name (eshell/pwd)))
+           (esh-dir-face nil)
+
+           (esh-git-section (magit-get-current-branch))
+           (esh-git-face nil)
+
+           (esh-venv-section pyvenv-virtual-env-name)
+           (esh-venv-face nil)
+
+           (esh-time-section (format-time-string "%H:%M" (current-time)))
+           (esh-time-face nil)
+
+           (esh-prompt-num-section (number-to-string eshell-prompt-number))
+           (esh-prompt-num-face nil)
+
+           (esh-sections (list
+                          (eshell-section "" esh-dir-section esh-dir-face)
+                          (eshell-section "" esh-git-section esh-git-face)
+                          (eshell-section "" esh-venv-section esh-venv-face)
+                          (eshell-section "" esh-time-section esh-time-face)
+                          (eshell-section "" esh-prompt-num-section esh-prompt-num-face))))
+      (concat
+       (with-face esh-header esh-header-face)
+       (s-join (with-face esh-sep esh-sep-face)
+               (-non-nil esh-sections))
+       (set-eshell-prompt-icon esh-prompt esh-prompt-face))))
+
+  (setq eshell-prompt-function 'esh-prompt-function))
