@@ -492,10 +492,14 @@ you should place your code here."
 (module/display/prettify-symbols)
 ;;(module/display/theme-updates)
 
+(module/misc)
+(module/ivy)
+(module/configuration)
 (jsg/configure-eshell)
 (jsg/configure-org-mode)
 (jsg/configure-navi-mode)
 (jsg/configure-outshine)
+
 
 )
 
@@ -1162,6 +1166,63 @@ MODE-HOOK-PAIRS-ALIST is an alist of the mode hoook and its pretty pairs."
    '(:equality :ordering :ordering-double :ordering-triple
                :arrows :arrows-twoheaded :punctuation
                :logic :sets :sub-and-superscripts)))
+;;;; Lisp-state
+
+(defun module/misc/lisp-state ()
+  "Add lisp state shortcut to Clojure and Hy."
+
+  (spacemacs/set-leader-keys-for-major-mode
+    'clojure-mode (kbd ",") 'lisp-state-toggle-lisp-state)
+  (spacemacs/set-leader-keys-for-major-mode
+    'hy-mode (kbd ",") 'lisp-state-toggle-lisp-state))
+
+;;;; Macros
+
+(defun module/misc/macros ()
+  "Evil Q shortcut for vim macros set at @q."
+
+  (evil-global-set-key 'normal (kbd "Q")
+                       (lambda () (interactive) (evil-execute-macro 1 "@q"))))
+
+;;;; Neotree
+(defun module/misc/neotree ()
+  "Neotree configuration."
+
+  (setq neo-theme 'icons
+        neo-window-width 28)
+
+  (setq neo-hidden-regexp-list '("^\\." "\\.pyc$" "~$" "^#.*#$" "\\.elc$"
+                                 ;; Pycache and init rarely want to see
+                                 "__pycache__" "__init__\\.py"))
+
+  (evil-global-set-key 'normal (kbd "M-f") 'winum-select-window-0)
+  (evil-global-set-key 'normal (kbd "M-p") 'neotree-find-project-root))
+
+;;;; Projectile
+
+(defun module/misc/projectile ()
+  "Project config, respect .projectile files."
+
+  (setq projectile-indexing-method 'native))
+;;;; Shell
+
+(defun module/misc/shell ()
+  "Quick eshell with vim interaction."
+
+  (defun my-spacemacs/shell-pop-eshell ()
+    (interactive)
+    (spacemacs/shell-pop-eshell nil)
+    (if (string= major-mode "eshell-mode")
+			(evil-insert 1)
+      (evil-escape)))
+
+  (evil-global-set-key 'normal (kbd "C-e") 'my-spacemacs/shell-pop-eshell)
+  (evil-global-set-key 'insert (kbd "C-e") 'my-spacemacs/shell-pop-eshell)
+
+  ;; Enables Python shell to print unicode
+  ;; TODO might have to make this pyvenv hook
+  (setenv "PYTHONIOENCODING" "utf-8")
+  (setenv "LANG" "en_US.UTF-8"))
 
 (defun jsg/configure-eshell ()
   "Eshell prettification."
@@ -1665,7 +1726,7 @@ MODE-HOOK-PAIRS-ALIST is an alist of the mode hoook and its pretty pairs."
 ;;; Misc
 
 (defun module/misc ()
-  (when-linux-call 'module/misc/spotify)
+  ;;(when-linux-call 'module/misc/spotify)
   (module/misc/aspell)
   (module/misc/auto-completion)
   (module/misc/gnus)
@@ -1696,6 +1757,23 @@ MODE-HOOK-PAIRS-ALIST is an alist of the mode hoook and its pretty pairs."
 
   (setq ispell-program-name "aspell"))
 
+;;;; Windows
+
+(defun module/misc/windows ()
+  "Additional window management bindings."
+
+  (evil-define-key 'normal outline-minor-mode-map (kbd "C-M-i")  ; M-tab
+    'spacemacs/alternate-buffer)
+
+  (global-set-key (kbd "M-d") 'spacemacs/delete-window))
+
+;;;; Yassnippet
+
+(defun module/misc/yassnippet ()
+  "Yassnippet bindings and config."
+
+  (global-set-key (kbd "C-SPC") 'hippie-expand))
+
 ;;;; Auto-completion
 
 (defun module/misc/auto-completion ()
@@ -1706,6 +1784,184 @@ MODE-HOOK-PAIRS-ALIST is an alist of the mode hoook and its pretty pairs."
      ((t (:inherit company-tooltip :weight bold :underline nil))))
    '(company-tooltip-common-selection
      ((t (:inherit company-tooltip-selection :weight bold :underline nil))))))
+
+(defun module/misc/gnus ()
+  "GNUS setup and user details. Nothing significant atm."
+
+  (setq user-mail-address	"jgraham20@gmail.com"
+        user-full-name	"Jason Graham"
+
+        ;; Get mail
+        gnus-secondary-select-methods
+        '((nnimap "gmail"
+                  (nnimap-address "imap.gmail.com")
+                  (nnimap-server-port 993)
+                  (nnimap-stream ssl))
+          (nntp "gmane"
+                (nntp-address "news.gmane.org"))
+          (nntp "news.gwene.org"))
+
+        ;; Send mail
+        message-send-mail-function 'smtpmail-send-it
+
+        ;; Archive outgoing email in Sent folder on imap.gmail.com
+        gnus-message-archive-method '(nnimap "imap.gmail.com")
+        gnus-message-archive-group "[Gmail]/Sent Mail"
+
+        ;; Auth
+        smtpmail-starttls-credentials '(("smtp.gmail.com" 587 nil nil))
+        smtpmail-auth-credentials '(("smtp.gmail.com" 587
+                                     "jgraham20@gmail.com" nil))
+
+        ;; SMPT Server config
+        smtpmail-default-smtp-server "smtp.gmail.com"
+        smtpmail-smtp-server "smtp.gmail.com"
+        smtpmail-smtp-service 587
+
+        ;; set return email address based on incoming email address
+        gnus-posting-styles
+        '(((header "to" "address@outlook.com")
+           (address  "address@outlook.com"))
+          ((header "to" "address@gmail.com")
+           (address "address@gmail.com")))
+
+        ;; store email in ~/gmail directory
+        nnml-directory "~/gmail"
+        message-directory "~/gmail"
+        mm-inline-large-images 'resize))
+
+;;; Python
+
+(defun module/python ()
+  (require 'python)
+  (unless-linux-call 'module/python/windows-pytest)
+  (module/python/fixes)
+  (module/python/mypy)
+  (module/python/venvs))
+
+;;;; Windows-pytest
+
+(defun module/python/windows-pytest ()
+  "Pytest is broken on Windows. Basic functionality is provided for Windows."
+
+  (defun ek-pytest-module ()
+    (interactive)
+    (shell-command (format "py.test -x -s %s&" buffer-file-name)))
+
+  (defun ek-pytest-one ()
+    (interactive)
+    (save-excursion
+      (let ((test-name
+             (progn
+               (re-search-backward "^[ ]*def \\(test_[a-zA-Z0-9_]*\\)")
+               (match-string 1))))
+        (shell-command
+         (format "py.test -x -s %s::%s&" buffer-file-name test-name)))))
+
+  (spacemacs/set-leader-keys-for-major-mode
+    'python-mode (kbd "t m") 'ek-pytest-module)
+  (spacemacs/set-leader-keys-for-major-mode
+    'python-mode (kbd "t t") 'ek-pytest-one))
+
+;;;; Fixes
+
+(defun module/python/fixes ()
+  "Various python bugfixes."
+
+  ;; Sometimes ipython shells trigger a bad error to popup
+  (defun python-shell-completion-native-try ()
+    "Return non-nil if can trigger native completion."
+    (let ((python-shell-completion-native-enable t)
+          (python-shell-completion-native-output-timeout
+           python-shell-completion-native-try-output-timeout))
+      (python-shell-completion-native-get-completions
+       (get-buffer-process (current-buffer))
+       nil "_")))
+
+  ;; No log output in pytests
+  ;; (setq pytest-cmd-flags "-x --no-print-logs")
+  (setq pytest-cmd-flags "-x -s")
+
+  ;; Remove flyspell from python buffers
+  (dolist (hook '(python-mode-hook))
+    (add-hook hook (lambda () (flyspell-mode -1)))))
+
+;;;; Mypy
+
+(defun module/python/mypy ()
+  "Enable mypy flycheck integration in-tandem with pylint."
+
+  (flycheck-define-checker
+      python-mypy ""
+      :command ("mypy"
+                "--ignore-missing-imports" "--fast-parser"
+                "--python-version" "3.6"
+                source-original)
+      :error-patterns
+      ((error line-start (file-name) ":" line ": error:" (message) line-end))
+      :modes python-mode)
+
+  (add-to-list 'flycheck-checkers 'python-mypy t)
+  (flycheck-add-next-checker 'python-pylint 'python-mypy t))
+
+;;;; Venvs
+
+(defun module/python/venvs ()
+  "Initialize virtual environment management for Python."
+
+  (require 'virtualenvwrapper)
+  (pyvenv-mode 1)
+
+  ;; Fixes hy-mode environment when pyvenv is activated
+  (add-hook 'pyvenv-post-activate-hooks 'python/init-hy-mode)
+
+  (venv-initialize-interactive-shells)
+  (venv-initialize-eshell))
+
+;;; Blog  FIXME
+
+(defun module/blog ()
+
+  (setq blog-dir "~/dev/blog"
+        public-blog-dir "~/dev/public-blog"
+        hugo-process "Hugo Server"
+        hugo-server-site "http://localhost:1313/")
+
+  (defun deploy-blog ()
+    "Run hugo and push changes upstream from anywhere."
+    (interactive)
+    (let ((original-dir default-directory)
+          (run-hugo (concat "hugo -d " public-blog-dir)))
+      (cd blog-dir)
+      (shell-command run-hugo)
+      (cd public-blog-dir)
+
+      (shell-command "git add .")
+      (shell-command (concat "git commit -m \"" (current-time-string) "\""))
+      (magit-push-current-to-upstream nil)
+
+      (cd original-dir)))
+
+  (defun start-blog-server ()
+    "Run hugo server if not already running and open its webpage."
+    (interactive)
+    (let ((original-dir default-directory))
+      (unless (get-process hugo-process)
+        (cd blog-dir)
+        (start-process hugo-process nil "hugo" "server")
+        (cd original-dir))
+
+      (browse-url hugo-server-site)))
+
+  (defun end-blog-server ()
+    "End hugo server process if running."
+    (interactive)
+    (--when-let (get-process hugo-process)
+      (delete-process it)))
+
+  (spacemacs/set-leader-keys (kbd "ab") 'deploy-blog)
+  (spacemacs/set-leader-keys (kbd "aa") 'start-blog-server)
+  (spacemacs/set-leader-keys (kbd "ae") 'end-blog-server))
 (defun dotspacemacs/emacs-custom-settings ()
   "Emacs custom settings.
 This is an auto-generated function, do not modify its content directly, use
@@ -1718,7 +1974,7 @@ This function is called at the very end of Spacemacs initialization."
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (spotify helm-spotify js-doc company-tern dash-functional tern coffee-mode highlight-parentheses evil-nerd-commenter define-word zonokai-theme zenburn-theme zen-and-art-theme xterm-color xkcd ws-butler winum white-sand-theme which-key volatile-highlights virtualenvwrapper vi-tilde-fringe uuidgen use-package underwater-theme ujelly-theme twilight-theme twilight-bright-theme twilight-anti-bright-theme tronesque-theme toxi-theme toc-org tao-theme tangotango-theme tango-plus-theme tango-2-theme symon sunny-day-theme sublimity sublime-themes subatomic256-theme subatomic-theme string-inflection spaceline-all-the-icons spacegray-theme soothe-theme solarized-theme soft-stone-theme soft-morning-theme soft-charcoal-theme smyx-theme smeargle shell-pop seti-theme sayid reverse-theme reveal-in-osx-finder restclient-helm restart-emacs rebecca-theme rainbow-delimiters railscasts-theme purple-haze-theme professional-theme pretty-mode prettify-utils popwin planet-theme phoenix-dark-pink-theme phoenix-dark-mono-theme persp-mode pcre2el pbcopy pastels-on-dark-theme password-generator paradox osx-trash osx-dictionary orgit organic-green-theme org-vcard org-sticky-header org-projectile org-present org-pomodoro org-gcal org-download org-bullets open-junk-file omtose-phellack-theme oldlace-theme occidental-theme obsidian-theme ob-restclient ob-http noctilux-theme niflheim-theme neotree navi-mode naquadah-theme mustang-theme multi-term move-text monokai-theme monochrome-theme molokai-theme moe-theme mmm-mode minimal-theme mic-paren material-theme markdown-toc majapahit-theme magithub magit-gitflow magit-gh-pulls madhat2r-theme macrostep lush-theme lorem-ipsum lispy linum-relative link-hint light-soap-theme launchctl jbeans-theme jazz-theme ir-black-theme inkpot-theme info+ indent-guide ibuffer-projectile hungry-delete htmlize hl-todo highlight-numbers highlight-indentation hide-comnt heroku-theme hemisu-theme help-fns+ helm-themes helm-swoop helm-spotify-plus helm-purpose helm-projectile helm-mode-manager helm-make helm-gitignore helm-flx helm-descbinds helm-company helm-c-yasnippet helm-ag hc-zenburn-theme gruvbox-theme gruber-darker-theme grandshell-theme gotham-theme google-translate golden-ratio gnuplot github-search github-clone gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link git-gutter-fringe git-gutter-fringe+ gist gh-md gandalf-theme fuzzy flx-ido flatui-theme flatland-theme firebelly-theme fill-column-indicator farmhouse-theme fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-snipe evil-search-highlight-persist evil-org evil-numbers evil-mc evil-matchit evil-magit evil-lisp-state evil-lion evil-indent-plus evil-iedit-state evil-exchange evil-escape evil-ediff evil-commentary evil-args evil-anzu espresso-theme eshell-z eshell-prompt-extras esh-help elisp-slime-nav editorconfig dumb-jump dracula-theme django-theme diff-hl deft darktooth-theme darkokai-theme darkmine-theme darkburn-theme dakrone-theme cyberpunk-theme company-statistics company-restclient column-enforce-mode color-theme-solarized color-theme-sanityinc-tomorrow color-theme-sanityinc-solarized clues-theme clojure-snippets clj-refactor clean-aindent-mode cider-eval-sexp-fu cherry-blossom-theme calfw busybee-theme bubbleberry-theme browse-at-remote birds-of-paradise-plus-theme badwolf-theme auto-yasnippet auto-highlight-symbol auto-compile apropospriate-theme anti-zenburn-theme ample-zen-theme ample-theme all-the-icons-ivy alect-themes aggressive-indent afternoon-theme adaptive-wrap ace-link ace-jump-helm-line ac-ispell))))
+    (restclient-helm helm-spotify multi helm-gitignore helm-company helm-c-yasnippet highlight-parentheses helm-themes helm-swoop helm-purpose helm-projectile helm-mode-manager helm-flx helm-descbinds helm-ag evil-nerd-commenter define-word ace-jump-helm-line xterm-color xkcd ws-butler winum which-key wgrep web-beautify volatile-highlights virtualenvwrapper vi-tilde-fringe uuidgen use-package toc-org symon sublimity string-inflection spotify spaceline-all-the-icons solarized-theme smex smeargle shell-pop sayid reveal-in-osx-finder restart-emacs rainbow-delimiters pretty-mode prettify-utils popwin persp-mode pcre2el pbcopy password-generator paradox osx-trash osx-dictionary orgit org-vcard org-sticky-header org-projectile org-present org-pomodoro org-gcal org-download org-bullets open-junk-file ob-restclient ob-http neotree navi-mode multi-term move-text mmm-mode mic-paren markdown-toc magithub magit-gitflow magit-gh-pulls macrostep lorem-ipsum livid-mode lispy linum-relative link-hint launchctl json-mode js2-refactor js-doc ivy-purpose ivy-hydra info+ indent-guide ibuffer-projectile hungry-delete htmlize hl-todo highlight-numbers highlight-indentation hide-comnt help-fns+ helm-make google-translate golden-ratio gnuplot gitignore-mode github-search github-clone gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link git-gutter-fringe git-gutter-fringe+ gist gh-md fuzzy flx-ido fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-snipe evil-search-highlight-persist evil-org evil-numbers evil-mc evil-matchit evil-magit evil-lisp-state evil-lion evil-indent-plus evil-iedit-state evil-exchange evil-escape evil-ediff evil-commentary evil-args evil-anzu eshell-z eshell-prompt-extras esh-help elisp-slime-nav editorconfig dumb-jump diff-hl deft counsel-projectile company-tern company-statistics company-restclient column-enforce-mode color-theme-solarized coffee-mode clojure-snippets clj-refactor clean-aindent-mode cider-eval-sexp-fu calfw browse-at-remote auto-yasnippet auto-highlight-symbol auto-compile all-the-icons-ivy aggressive-indent adaptive-wrap ace-link ac-ispell))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
