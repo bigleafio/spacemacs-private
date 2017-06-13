@@ -51,8 +51,8 @@ values."
                          auto-completion-tab-key-behavior 'complete
                          auto-completion-enable-snippets-in-popup t)
      (ibuffer :variables ibuffer-group-buffers-by 'projects)
-     (clojure :variables
-              clojure-enable-fancify-symbols t)
+     clojure
+     gnus
      emacs-lisp
      deft
      osx
@@ -87,7 +87,6 @@ values."
                                       navi-mode                ; Navbar on buffer outlines
 
                                       ;; Org
-                                      org-gcal                 ; google calendar syncing
                                       org-vcard                ; Import/export google contacts
 
                                       ;; Misc
@@ -491,9 +490,9 @@ you should place your code here."
 (jsg/configure-magit)
 (module/display/prettify-symbols)
 ;;(module/display/theme-updates)
-
+(module/navigation)
 (module/misc)
-(module/ivy)
+;;(module/ivy)
 (module/configuration)
 (jsg/configure-eshell)
 (jsg/configure-org-mode)
@@ -636,7 +635,34 @@ you should place your code here."
 
       (setq org-confirm-babel-evaluate nil)
 
-  )
+      )
+
+(defun module/navigation ()
+  (module/navigation/avy)
+  (module/navigation/extra-bindings)
+  (module/navigation/file-links)
+  (module/navigation/searching))
+
+(defun module/navigation/extra-bindings ()
+  "Rebind H, L, and 0 to BOL, EOL, old %."
+
+  ;; H and L move to modified BOL and EOL
+  (evil-global-set-key 'normal (kbd "H") 'evil-first-non-blank)
+  (evil-global-set-key 'visual (kbd "H") 'evil-first-non-blank)
+  (evil-global-set-key 'motion (kbd "H") 'evil-first-non-blank)
+
+  (evil-global-set-key 'normal (kbd "L") 'evil-end-of-line)
+  (evil-global-set-key 'visual (kbd "L")
+                       (lambda () (interactive)  ; otherwise it goes past EOL
+                         (evil-end-of-line)))
+  (evil-global-set-key 'motion (kbd "L") 'evil-end-of-line)
+
+  ;; I find '%' very useful but an annoying to reach binding.
+  ;; Since H is bound to BOL, we can rebind it to 0.
+  (evil-global-set-key 'normal (kbd "0") 'evil-jump-item)
+  (evil-global-set-key 'visual (kbd "0") 'evil-jump-item)
+  (evil-global-set-key 'motion (kbd "0") 'evil-jump-item))
+
 ;;;; Windows-frame-size-fix
 
 (defun module/display/windows-frame-size-fix ()
@@ -1460,10 +1486,10 @@ MODE-HOOK-PAIRS-ALIST is an alist of the mode hoook and its pretty pairs."
 
 (defun module/org ()
   (with-eval-after-load 'org
-    (when-linux-call 'module/org/linux-file-apps)
+    ;;(when-linux-call 'module/org/linux-file-apps)
     (module/org/babel)
     (module/org/exports)
-    (module/org/gcal)
+    ;;(module/org/gcal)
     (module/org/misc)
     (module/org/templates)
     (module/org/theming)))
@@ -1527,7 +1553,7 @@ MODE-HOOK-PAIRS-ALIST is an alist of the mode hoook and its pretty pairs."
   (load (if-linux "~/Dropbox/secrets.el"
                   "c:/~/Dropbox/secrets.el") t)
   (setq org-gcal-file-alist
-        `(("ekaschalk@gmail.com" .
+        `(("jgraham20@gmail.com" .
            ,(if-linux "~/Dropbox/schedule.org" "c:/~/Dropbox/schedule.org"))))
   (setq org-contacts-files
         `(,(if-linux "~/Dropbox/contacts.org" "c:/~/Dropbox/contacts.org")))
@@ -1738,6 +1764,50 @@ MODE-HOOK-PAIRS-ALIST is an alist of the mode hoook and its pretty pairs."
   (module/misc/windows)
   (module/misc/yassnippet))
 
+;;;; Avy
+
+(defun module/navigation/avy ()
+  "Avy keybindings and custom motions."
+
+  (require 'avy)  ; TODO must require for to get avy--generic-jump loaded
+
+  (global-set-key (kbd "C-h") 'avy-pop-mark)
+  (global-set-key (kbd "C-j") 'evil-avy-goto-char-2)
+  (global-set-key (kbd "C-k") 'evil-avy-goto-word-or-subword-1)
+  (global-set-key (kbd "C-l") 'evil-avy-goto-line)
+
+  ;; TODO this motion should be major-mode specific and handle navi altogether
+  (defun avy-navi-goto-outline ()
+    (interactive)
+    (avy--generic-jump "[;]+\\( \\)" nil 'post))  ; must be post
+
+  (defun avy-navi-goto-comment ()
+    (interactive)
+    (avy--generic-jump comment-start-skip nil 'pre))
+
+  (global-set-key (kbd "C-;") 'avy-navi-goto-outline)
+  ;; TODO probably better way to do multi evil global set
+  (evil-global-set-key 'normal (kbd "C-o") 'avy-navi-goto-outline)
+  (evil-global-set-key 'visual (kbd "C-o") 'avy-navi-goto-outline)
+  (evil-global-set-key 'replace (kbd "C-o") 'avy-navi-goto-outline)
+  (evil-global-set-key 'operator (kbd "C-o") 'avy-navi-goto-outline)
+  (evil-global-set-key 'motion (kbd "C-o") 'avy-navi-goto-outline)
+  (evil-global-set-key 'emacs (kbd "C-o") 'avy-navi-goto-outline)
+
+  (with-eval-after-load 'flyspell
+    (evil-define-key '(normal insert visual replace operator motion emacs)
+      flyspell-mode-map (kbd "C-;") 'avy-navi-goto-comment))
+
+  (with-eval-after-load 'org
+    (evil-define-key '(normal insert visual replace operator motion emacs)
+      org-mode-map (kbd "C-j") 'evil-avy-goto-char-2)
+    (evil-define-key '(normal insert visual replace operator motion emacs)
+      org-mode-map (kbd "C-k") 'evil-avy-goto-word-or-subword-1))
+
+  (with-eval-after-load 'python
+    (evil-define-key '(normal insert visual replace operator motion emacs)
+      python-mode-map (kbd "C-j") 'evil-avy-goto-char-2)))
+
 ;;;; Spotify
 
 (defun module/misc/spotify ()
@@ -1834,7 +1904,7 @@ MODE-HOOK-PAIRS-ALIST is an alist of the mode hoook and its pretty pairs."
 
 (defun module/python ()
   (require 'python)
-  (unless-linux-call 'module/python/windows-pytest)
+  ;;(unless-linux-call 'module/python/windows-pytest)
   (module/python/fixes)
   (module/python/mypy)
   (module/python/venvs))
@@ -1974,7 +2044,7 @@ This function is called at the very end of Spacemacs initialization."
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (restclient-helm helm-spotify multi helm-gitignore helm-company helm-c-yasnippet highlight-parentheses helm-themes helm-swoop helm-purpose helm-projectile helm-mode-manager helm-flx helm-descbinds helm-ag evil-nerd-commenter define-word ace-jump-helm-line xterm-color xkcd ws-butler winum which-key wgrep web-beautify volatile-highlights virtualenvwrapper vi-tilde-fringe uuidgen use-package toc-org symon sublimity string-inflection spotify spaceline-all-the-icons solarized-theme smex smeargle shell-pop sayid reveal-in-osx-finder restart-emacs rainbow-delimiters pretty-mode prettify-utils popwin persp-mode pcre2el pbcopy password-generator paradox osx-trash osx-dictionary orgit org-vcard org-sticky-header org-projectile org-present org-pomodoro org-gcal org-download org-bullets open-junk-file ob-restclient ob-http neotree navi-mode multi-term move-text mmm-mode mic-paren markdown-toc magithub magit-gitflow magit-gh-pulls macrostep lorem-ipsum livid-mode lispy linum-relative link-hint launchctl json-mode js2-refactor js-doc ivy-purpose ivy-hydra info+ indent-guide ibuffer-projectile hungry-delete htmlize hl-todo highlight-numbers highlight-indentation hide-comnt help-fns+ helm-make google-translate golden-ratio gnuplot gitignore-mode github-search github-clone gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link git-gutter-fringe git-gutter-fringe+ gist gh-md fuzzy flx-ido fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-snipe evil-search-highlight-persist evil-org evil-numbers evil-mc evil-matchit evil-magit evil-lisp-state evil-lion evil-indent-plus evil-iedit-state evil-exchange evil-escape evil-ediff evil-commentary evil-args evil-anzu eshell-z eshell-prompt-extras esh-help elisp-slime-nav editorconfig dumb-jump diff-hl deft counsel-projectile company-tern company-statistics company-restclient column-enforce-mode color-theme-solarized coffee-mode clojure-snippets clj-refactor clean-aindent-mode cider-eval-sexp-fu calfw browse-at-remote auto-yasnippet auto-highlight-symbol auto-compile all-the-icons-ivy aggressive-indent adaptive-wrap ace-link ac-ispell))))
+    (counsel restclient-helm helm-spotify multi helm-gitignore helm-company helm-c-yasnippet highlight-parentheses helm-themes helm-swoop helm-purpose helm-projectile helm-mode-manager helm-flx helm-descbinds helm-ag evil-nerd-commenter define-word ace-jump-helm-line xterm-color xkcd ws-butler winum which-key wgrep web-beautify volatile-highlights virtualenvwrapper vi-tilde-fringe uuidgen use-package toc-org symon sublimity string-inflection spotify spaceline-all-the-icons solarized-theme smex smeargle shell-pop sayid reveal-in-osx-finder restart-emacs rainbow-delimiters pretty-mode prettify-utils popwin persp-mode pcre2el pbcopy password-generator paradox osx-trash osx-dictionary orgit org-vcard org-sticky-header org-projectile org-present org-pomodoro org-gcal org-download org-bullets open-junk-file ob-restclient ob-http neotree navi-mode multi-term move-text mmm-mode mic-paren markdown-toc magithub magit-gitflow magit-gh-pulls macrostep lorem-ipsum livid-mode lispy linum-relative link-hint launchctl json-mode js2-refactor js-doc ivy-purpose ivy-hydra info+ indent-guide ibuffer-projectile hungry-delete htmlize hl-todo highlight-numbers highlight-indentation hide-comnt help-fns+ helm-make google-translate golden-ratio gnuplot gitignore-mode github-search github-clone gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link git-gutter-fringe git-gutter-fringe+ gist gh-md fuzzy flx-ido fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-snipe evil-search-highlight-persist evil-org evil-numbers evil-mc evil-matchit evil-magit evil-lisp-state evil-lion evil-indent-plus evil-iedit-state evil-exchange evil-escape evil-ediff evil-commentary evil-args evil-anzu eshell-z eshell-prompt-extras esh-help elisp-slime-nav editorconfig dumb-jump diff-hl deft counsel-projectile company-tern company-statistics company-restclient column-enforce-mode color-theme-solarized coffee-mode clojure-snippets clj-refactor clean-aindent-mode cider-eval-sexp-fu calfw browse-at-remote auto-yasnippet auto-highlight-symbol auto-compile all-the-icons-ivy aggressive-indent adaptive-wrap ace-link ac-ispell))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
