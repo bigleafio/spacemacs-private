@@ -31,13 +31,13 @@ values."
    dotspacemacs-configuration-layer-path '()
    ;; List of configuration layers to load.
    dotspacemacs-configuration-layers
-   '(
+   '(javascript
      ;; ----------------------------------------------------------------
      ;; Example of useful layers you may want to use right away.
      ;; Uncomment some layer names and press <SPC f e R> (Vim style) or
      ;; <M-m f e R> (Emacs style) to install them.
      ;; ----------------------------------------------------------------
-    
+
 
      helm
      evil-commentary
@@ -50,9 +50,7 @@ values."
                          auto-completion-return-key-behavior 'complete
                          auto-completion-tab-key-behavior 'complete
                          auto-completion-enable-snippets-in-popup t)
-
      (ibuffer :variables ibuffer-group-buffers-by 'projects)
-     
      (clojure :variables
               clojure-enable-fancify-symbols t)
      emacs-lisp
@@ -62,16 +60,15 @@ values."
      github
      version-control
      markdown
-     theming
-     themes-megapack
      org
      (restclient :variables
                  restclient-use-org t)
+     spotify
      (shell :variables
              shell-default-shell 'eshell)
-
      version-control
      xkcd
+     javascript
      )
    ;; List of additional packages that will be installed without being
    ;; wrapped in a layer. If you need some configuration for these
@@ -80,6 +77,7 @@ values."
    dotspacemacs-additional-packages '(sublimity
                                       mic-paren
                                       color-theme-solarized
+                                      solarized-theme
                                       org-sticky-header
                                       org-plus-contrib
                                       org-gcal
@@ -93,7 +91,7 @@ values."
                                       org-vcard                ; Import/export google contacts
 
                                       ;; Misc
-                                      helm-spotify-plus        ; Spotify improvements
+                                      ;;helm-spotify-plus        ; Spotify improvements
                                       virtualenvwrapper        ; Python environment management
 
                                       ;; Visual Enhancements
@@ -177,17 +175,17 @@ values."
    ;; List of themes, the first of the list is loaded when spacemacs starts.
    ;; Press <SPC> T n to cycle to the next theme in the list (works great
    ;; with 2 themes variants, one dark and one light)
-   dotspacemacs-themes '(solarized
+   dotspacemacs-themes '(solarized-light
                          leuven)
                                         ;gruvbox; If non nil the cursor color matches the state color in GUI Emacs.
    dotspacemacs-colorize-cursor-according-to-state t
    ;; Default font, or prioritized list of fonts. `powerline-scale' allows to
    ;; quickly tweak the mode-line size to make separators look not too crappy.
-   dotspacemacs-default-font '("Source Code Pro"
+   dotspacemacs-default-font '("Hack"
                                :size 14
                                :weight normal
                                :width normal
-                               :powerline-scale 1.1)
+                               :powerline-scale 1.5)
    ;; The leader key
    dotspacemacs-leader-key "SPC"
    ;; The key used for Emacs commands (M-x) (after pressing on the leader key).
@@ -378,12 +376,12 @@ you should place your code here."
   (setq powerline-default-separator 'arrow)
 
   ;;(load "secret.el")
-  (require 'sublimity)
-  (require 'sublimity-scroll)
+  ;;(require 'sublimity)
+  ;;(require 'sublimity-scroll)
   ;; (require 'sublimity-map)
   ;; (require 'sublimity-attractive)
-  (sublimity-mode 1)
-  
+  ;;(sublimity-mode 1)
+
   ;; Sets up exec-path-from shell
   ;; https://github.com/purcell/exec-path-from-shell
   (when (memq window-system '(mac ns))
@@ -469,14 +467,31 @@ you should place your code here."
          (cursor :background "#b58900")
        )))
 
-(set-terminal-parameter nil 'background-mode 'dark)
-(set-frame-parameter nil 'background-mode 'dark)
-(spacemacs/load-theme 'solarized)
+;;(set-terminal-parameter nil 'background-mode 'dark)
+;;(set-frame-parameter nil 'background-mode 'dark)
+;;(spacemacs/load-theme 'solarized)
 
 (setq blink-matching-paren nil)
 (paren-activate)
 (setq paren-match-face 'mode-line)
 (menu-bar-mode 1)
+
+(setq projectile-indexing-method 'native)
+
+(if (memq window-system '(w32)) 'module/display/windows-frame-size-fix)
+;; Group 2
+;;(module/display/fontsets)
+;;(module/display/font-locks)
+
+;; Rest
+;;(module/display/all-the-icons)
+;;(module/display/extra-syntax-highlighting)
+;;(module/display/modeline)
+(module/display/outline-ellipsis-modification)
+(jsg/configure-magit)
+(module/display/prettify-symbols)
+;;(module/display/theme-updates)
+
 (jsg/configure-eshell)
 (jsg/configure-org-mode)
 (jsg/configure-navi-mode)
@@ -618,6 +633,535 @@ you should place your code here."
       (setq org-confirm-babel-evaluate nil)
 
   )
+;;;; Windows-frame-size-fix
+
+(defun module/display/windows-frame-size-fix ()
+  "Surface has 200% scaling, doesn't apply to emacs, fixes with push of `f2`."
+
+  (add-to-list 'default-frame-alist '(font . "Hack"))
+  (set-face-attribute 'default t :font "Hack")
+  (global-set-key (kbd "<f2>")
+                  (lambda () (interactive) (mapc (lambda (x) (zoom-frm-out)) '(1 2)))))
+
+;;;; Fontsets
+
+(defun module/display/fontsets ()
+  "Set right fonts for missing and all-the-icons unicode points."
+
+  ;; Fira code ligatures. Fira Code Symbol is a different font than Fira Code!
+  ;; You can use any font you wish with just the ligatures, I use Hack.
+  (set-fontset-font t '(#Xe100 . #Xe16f) "Fira Code Symbol")
+
+  (defun set-icon-fonts (CODE-FONT-ALIST)
+    "Utility to associate unicode points with a chosen font.
+CODE-FONT-ALIST is an alist of a font and unicode points to force to use it."
+    (mapc (lambda (x)
+            (let ((font (car x))
+                  (codes (cdr x)))
+              (mapc (lambda (code)
+                      (set-fontset-font t `(,code . ,code) font))
+                    codes)))
+          CODE-FONT-ALIST))
+
+  ;; NOTE The icons you see are not the correct icons until this is evaluated
+  (set-icon-fonts
+   '(("fontawesome"
+      ;;              
+      #xf07c #xf0c9 #xf0c4 #xf0cb)
+
+     ("all-the-icons"
+      ;;    
+      #xe907 #xe928)
+
+     ("material"
+      ;; 
+      #xe192)
+
+     ("github-octicons"
+      ;;              
+      #xf091 #xf059 #xf076 #xf075)
+
+     ("fileicons"
+      ;; 
+      #xf016)
+
+     ("Symbola"
+      ;; 𝕊    ⨂      ∅      ⟻    ⟼     ⊙      𝕋       𝔽
+      #x1d54a #x2a02 #x2205 #x27fb #x27fc #x2299 #x1d54b #x1d53d
+      ;; 𝔹    𝔇       𝔗
+      #x1d539 #x1d507 #x1d517))))
+
+;;;; Font-locks
+;;;;; Core
+
+(defun module/display/font-locks ()
+  "Enable following font-locks for appropriate modes."
+
+  (defun -add-font-lock-kwds (FONT-LOCK-ALIST)
+    "Add unicode font lock replacements.
+FONT-LOCK-ALIST is an alist of a regexp and the unicode point to replace with.
+Used as: (add-hook 'a-mode-hook (-partial '-add-font-lock-kwds the-alist))"
+    (defun -build-font-lock-alist (REGEX-CHAR-PAIR)
+      "Compose region for each REGEX-CHAR-PAIR in FONT-LOCK-ALIST."
+      `(,(car REGEX-CHAR-PAIR)
+        (0 (prog1 ()
+             (compose-region
+              (match-beginning 1)
+              (match-end 1)
+              ,(concat "	"
+                       (list (cadr REGEX-CHAR-PAIR))))))))
+    (font-lock-add-keywords nil (mapcar '-build-font-lock-alist FONT-LOCK-ALIST)))
+
+  (defun add-font-locks (FONT-LOCK-HOOKS-ALIST)
+    "Utility to add font lock alist to many hooks.
+FONT-LOCK-HOOKS-ALIST is an alist of a font-lock-alist and its desired hooks."
+    (mapc (lambda (x)
+            (lexical-let ((font-lock-alist (car x))
+                          (mode-hooks (cdr x)))
+              (mapc (lambda (mode-hook)
+                      (add-hook mode-hook
+                                (-partial '-add-font-lock-kwds font-lock-alist)))
+                    mode-hooks)))
+          FONT-LOCK-HOOKS-ALIST))
+
+  (require 'navi-mode)  ; TODO handle this require better for the navi font-locks
+  (add-font-locks
+   `((,fira-font-lock-alist        prog-mode-hook  org-mode-hook)
+     (,python-font-lock-alist      python-mode-hook)
+     (,emacs-lisp-font-lock-alist  emacs-lisp-mode-hook)
+     (,hy-font-lock-alist          hy-mode-hook)
+     (,navi-font-lock-alist        navi-mode-hook)
+     )))
+
+;;;;; Fira-font-locks
+
+(defconst fira-font-lock-alist
+  '(;;;; OPERATORS
+    ;;;;; Pipes
+    ("\\(<|\\)" #Xe14d) ("\\(<>\\)" #Xe15b) ("\\(<|>\\)" #Xe14e) ("\\(|>\\)" #Xe135)
+
+    ;;;;; Brackets
+    ("\\(<\\*\\)" #Xe14b) ("\\(<\\*>\\)" #Xe14c) ("\\(\\*>\\)" #Xe104)
+    ("\\(<\\$\\)" #Xe14f) ("\\(<\\$>\\)" #Xe150) ("\\(\\$>\\)" #Xe137)
+    ("\\(<\\+\\)" #Xe155) ("\\(<\\+>\\)" #Xe156) ("\\(\\+>\\)" #Xe13a)
+
+    ;;;;; Equality
+    ("\\(!=\\)" #Xe10e) ("\\(!==\\)"         #Xe10f) ("\\(=/=\\)" #Xe143)
+    ("\\(/=\\)" #Xe12c) ("\\(/==\\)"         #Xe12d)
+    ("\\(===\\)"#Xe13d) ("[^!/]\\(==\\)[^>]" #Xe13c)
+
+    ;;;;; Equality Special
+    ("\\(||=\\)"  #Xe133) ("[^|]\\(|=\\)" #Xe134)
+    ("\\(~=\\)"   #Xe166)
+    ("\\(\\^=\\)" #Xe136)
+    ("\\(=:=\\)"  #Xe13b)
+
+    ;;;;; Comparisons
+    ("\\(<=\\)" #Xe141) ("\\(>=\\)" #Xe145)
+    ("\\(</\\)" #Xe162) ("\\(</>\\)" #Xe163)
+
+    ;;;;; Shifts
+    ("[^-=]\\(>>\\)" #Xe147) ("\\(>>>\\)" #Xe14a)
+    ("[^-=]\\(<<\\)" #Xe15c) ("\\(<<<\\)" #Xe15f)
+
+    ;;;;; Dots
+    ("\\(\\.-\\)"    #Xe122) ("\\(\\.=\\)" #Xe123)
+    ("\\(\\.\\.<\\)" #Xe125)
+
+    ;;;;; Hashes
+    ("\\(#{\\)"  #Xe119) ("\\(#(\\)"   #Xe11e) ("\\(#_\\)"   #Xe120)
+    ("\\(#_(\\)" #Xe121) ("\\(#\\?\\)" #Xe11f) ("\\(#\\[\\)" #Xe11a)
+
+    ;;;; REPEATED CHARACTERS
+    ;;;;; 2-Repeats
+    ("\\(||\\)" #Xe132)
+    ("\\(!!\\)" #Xe10d)
+    ("\\(%%\\)" #Xe16a)
+    ("\\(&&\\)" #Xe131)
+
+    ;;;;; 2+3-Repeats
+    ("\\(##\\)"       #Xe11b) ("\\(###\\)"         #Xe11c) ("\\(####\\)" #Xe11d)
+    ("\\(--\\)"       #Xe111) ("\\(---\\)"         #Xe112)
+    ("\\({-\\)"       #Xe108) ("\\(-}\\)"          #Xe110)
+    ("\\(\\\\\\\\\\)" #Xe106) ("\\(\\\\\\\\\\\\\\)" #Xe107)
+    ("\\(\\.\\.\\)"   #Xe124) ("\\(\\.\\.\\.\\)"   #Xe126)
+    ("\\(\\+\\+\\)"   #Xe138) ("\\(\\+\\+\\+\\)"   #Xe139)
+    ("\\(//\\)"       #Xe12f) ("\\(///\\)"         #Xe130)
+    ("\\(::\\)"       #Xe10a) ("\\(:::\\)"         #Xe10b)
+
+    ;;;; ARROWS
+    ;;;;; Direct
+    ("[^-]\\(->\\)" #Xe114) ("[^=]\\(=>\\)" #Xe13f)
+    ("\\(<-\\)"     #Xe152)
+    ("\\(-->\\)"    #Xe113) ("\\(->>\\)"    #Xe115)
+    ("\\(==>\\)"    #Xe13e) ("\\(=>>\\)"    #Xe140)
+    ("\\(<--\\)"    #Xe153) ("\\(<<-\\)"    #Xe15d)
+    ("\\(<==\\)"    #Xe158) ("\\(<<=\\)"    #Xe15e)
+    ("\\(<->\\)"    #Xe154) ("\\(<=>\\)"    #Xe159)
+
+    ;;;;; Branches
+    ("\\(-<\\)"  #Xe116) ("\\(-<<\\)" #Xe117)
+    ("\\(>-\\)"  #Xe144) ("\\(>>-\\)" #Xe148)
+    ("\\(=<<\\)" #Xe142) ("\\(>>=\\)" #Xe149)
+    ("\\(>=>\\)" #Xe146) ("\\(<=<\\)" #Xe15a)
+
+    ;;;;; Squiggly
+    ("\\(<~\\)" #Xe160) ("\\(<~~\\)" #Xe161)
+    ("\\(~>\\)" #Xe167) ("\\(~~>\\)" #Xe169)
+    ("\\(-~\\)" #Xe118) ("\\(~-\\)"  #Xe165)
+
+    ;;;; MISC
+    ("\\(www\\)"                   #Xe100)
+    ("\\(<!--\\)"                  #Xe151)
+    ("\\(~@\\)"                    #Xe164)
+    ("[^<]\\(~~\\)"                #Xe168)
+    ("\\(\\?=\\)"                  #Xe127)
+    ("[^=]\\(:=\\)"                #Xe10c)
+    ("\\(/>\\)"                    #Xe12e)
+    ("[^\\+<>]\\(\\+\\)[^\\+<>]"   #Xe16d)
+    ("[^:=]\\(:\\)[^:=]"           #Xe16c)
+    ("\\(<=\\)"                    #Xe157)
+  ))
+
+;;;;; Language-font-locks
+
+(defconst emacs-lisp-font-lock-alist
+  ;; Outlines not using * so better overlap with in-the-wild packages.
+  ;; Intentionally not requiring BOL for eg. fira config modularization
+  '(("\\(^;;;\\)"                   ?■)
+    ("\\(^;;;;\\)"                  ?○)
+    ("\\(^;;;;;\\)"                 ?✸)
+    ("\\(^;;;;;;\\)"                ?✿)))
+
+(defconst navi-font-lock-alist
+  ;; TODO ideally this would be major-mode specific, atm elisp
+  '(;; Outlines
+    ;; Hides numbers (numbers still needed for internal navi methods)
+    ("\\([ ]+[0-9]+:;;;\\) "                   ?■)
+    ("\\([ ]+[0-9]+:;;;;\\) "                  ?○)
+    ("\\([ ]+[0-9]+:;;;;;\\) "                 ?✸)
+    ("\\([ ]+[0-9]+:;;;;;;\\) "                ?✿)
+
+    ;; Hide first line
+    ("\\(.*matches.*$\\)"            ? )
+    ))
+
+(defconst python-font-lock-alist
+  ;; Outlines
+  '(("\\(^# \\*\\)[ \t\n]"          ?■)
+    ("\\(^# \\*\\*\\)[ \t\n]"       ?○)
+    ("\\(^# \\*\\*\\*\\)[ \t\n]"    ?✸)
+    ("\\(^# \\*\\*\\*\\*\\)[^\\*]"  ?✿)))
+
+(defconst hy-font-lock-alist
+  ;; Outlines
+  '(("\\(^;; \\*\\)[ \t\n]"          ?■)
+    ("\\(^;; \\*\\*\\)[ \t\n]"       ?○)
+    ("\\(^;; \\*\\*\\*\\)[ \t\n]"    ?✸)
+    ("\\(^;; \\*\\*\\*\\*\\)[^\\*]"  ?✿)
+
+    ;; self does not work as a prettify symbol for hy, unlike python
+    ("\\(self\\)"   ?⊙)))
+
+
+;;;; All-the-icons
+
+(defun module/display/all-the-icons ()
+  "Add hylang icon to all-the-icons for neotree and modeline integration."
+
+  ;; Both all-the-icons-icon-alist and all-the-icons-mode-icon-alist
+  ;; need to be updated for either modification to take effect.
+  (with-eval-after-load 'all-the-icons
+    (add-to-list
+     'all-the-icons-icon-alist
+     '("\\.hy$" all-the-icons-fileicon "lisp" :face all-the-icons-orange))
+    (add-to-list
+     'all-the-icons-mode-icon-alist
+     '(hy-mode all-the-icons-fileicon "lisp" :face all-the-icons-orange))))
+
+;;;; Extra-syntax-highlighting
+
+(defun module/display/extra-syntax-highlighting ()
+  "Extra syntax highlighting for desired keywords."
+
+  (defun hy-extra-syntax ()
+    (font-lock-add-keywords
+     nil '(;; self is not defined by hy-mode as a keyword
+         ("\\<\\(self\\)" . 'font-lock-constant-face)
+
+         ;; Highlight entire line for decorators
+         ("\\(#@.*$\\)" . 'font-lock-function-name-face)
+
+         ;; Syntax highlighting for reader-macros
+         ("\\(#.\\)" . 'font-lock-function-name-face))))
+
+  (defun navi-extra-syntax ()
+    (font-lock-add-keywords
+     nil '(("\\([ ]+[0-9]+:;;;\\) .*$" .    'org-level-1)
+         ("\\([ ]+[0-9]+:;;;;\\) .*$" .   'org-level-2)
+         ("\\([ ]+[0-9]+:;;;;;\\) .*$" .  'org-level-3)
+         ("\\([ ]+[0-9]+:;;;;;\\) .*$" .  'org-level-4))))
+
+  (add-hook 'hy-mode-hook 'hy-extra-syntax)
+  (add-hook 'navi-mode-hook 'navi-extra-syntax))
+
+;;;; Modeline
+
+(defun module/display/modeline ()
+  "Minimalistic spaceline-all-the-icons configuration."
+
+  (use-package spaceline-all-the-icons
+    :after spaceline  ; eval-after-load doesn't work for this setup
+    :config (progn
+              ;; Initialization
+              (spaceline-all-the-icons--setup-neotree)
+              (spaceline-all-the-icons-theme)
+
+              ;; Configuration
+              (setq spaceline-highlight-face-func 'spaceline-highlight-face-default
+                    powerline-default-separator 'bar
+                    spaceline-all-the-icons-icon-set-modified 'chain
+                    spaceline-all-the-icons-icon-set-window-numbering 'circle
+                    spaceline-all-the-icons-separators-type 'arrow
+                    spaceline-all-the-icons-primary-separator "")
+
+              ;; Toggles
+              (spaceline-toggle-all-the-icons-buffer-size-off)
+              (spaceline-toggle-all-the-icons-buffer-position-off)
+              (spaceline-toggle-all-the-icons-vc-icon-off)
+              (spaceline-toggle-all-the-icons-vc-status-off)
+              (spaceline-toggle-all-the-icons-git-status-off)
+              (spaceline-toggle-all-the-icons-flycheck-status-off)
+              (spaceline-toggle-all-the-icons-time-off)
+              (spaceline-toggle-all-the-icons-battery-status-off)
+              (spaceline-toggle-hud-off))))
+
+;;;; Outline-ellipsis-modification
+
+(defun module/display/outline-ellipsis-modification ()
+  "Org-ellipsis but for outline-minor-mode headings"
+
+  (defvar outline-display-table (make-display-table))
+  (set-display-table-slot outline-display-table 'selective-display
+                          (vector (make-glyph-code ?▼ 'escape-glyph)))
+  (defun set-outline-display-table ()
+    (setf buffer-display-table outline-display-table))
+
+  (add-hook 'outline-mode-hook 'set-outline-display-table)
+  (add-hook 'outline-minor-mode-hook 'set-outline-display-table))
+
+;;;; Prettify-magit
+
+(defun jsg/configure-magit ()
+  "Add faces to Magit manually for things like commit headers eg. (Add: ...).
+Adding faces to Magit is non-trivial since any use of font-lock will break
+fontification of the buffer. This is due to Magit doing all styling with
+`propertize' and black magic. So we apply the faces the manual way.
+Adds Ivy integration so a prompt of (Add, Docs, ...) appears when commiting.
+Can explore icons by evaluating eg.: (all-the-icons-insert-icons-for 'material)
+"
+
+  (setq my-magit-colors '(:feature "silver"
+                          :fix "#FB6542"    ; sunset
+                          :add "#375E97"    ; sky
+                          :clean "#FFBB00"  ; sunflower
+                          :docs "#3F681C"   ; grass
+                          ))
+
+  (defface my-magit-base-face
+    `((t :weight bold  :height 1.2))
+    "Base face for magit commit headers."
+    :group 'magit-faces)
+
+  (defface my-magit-feature-face
+    `((t :foreground ,(plist-get my-magit-colors :feature)
+         :inherit my-magit-base-face))
+    "Feature commit header face.")
+
+  (defface my-magit-fix-face
+    `((t :foreground ,(plist-get my-magit-colors :fix)
+         :inherit my-magit-base-face))
+    "Fix commit header face.")
+
+  (defface my-magit-add-face
+    `((t :foreground ,(plist-get my-magit-colors :add)
+         :inherit my-magit-base-face))
+    "Add commit header face.")
+
+  (defface my-magit-clean-face
+    `((t :foreground ,(plist-get my-magit-colors :clean)
+         :inherit my-magit-base-face))
+    "Clean commit header face.")
+
+  (defface my-magit-docs-face
+    `((t :foreground ,(plist-get my-magit-colors :docs)
+         :inherit my-magit-base-face))
+    "Docs commit header face.")
+
+  (defface my-magit-master-face
+    `((t :box t
+         :inherit my-magit-base-face))
+    "Docs commit header face.")
+
+  (defface my-magit-origin-face
+    `((t :box t
+         :inherit my-magit-base-face))
+    "Docs commit header face.")
+
+  (setq pretty-magit-faces '(("\\<\\(Feature:\\)"         'my-magit-feature-face)
+                             ("\\<\\(Add:\\)"             'my-magit-add-face)
+                             ("\\<\\(Fix:\\)"             'my-magit-fix-face)
+                             ("\\<\\(Clean:\\)"           'my-magit-clean-face)
+                             ("\\<\\(Docs:\\)"            'my-magit-docs-face)
+                             ("\\<\\(master\\)\\>"        'my-magit-master-face)
+                             ("\\<\\(origin/master\\)\\>" 'my-magit-origin-face))
+
+        pretty-magit-symbols '(("\\<\\(Feature:\\)"      ?)
+                               ("\\<\\(Add:\\)"          ?)
+                               ("\\<\\(Fix:\\)"          ?)
+                               ("\\<\\(Clean:\\)"        ?)
+                               ("\\<\\(Docs:\\)"         ?)
+                               ("\\<\\(master\\)\\>"     ?)
+                               ("\\<\\(origin/master\\)" ?)))
+
+  (defun add-magit-faces ()
+    "Apply `pretty-magit-faces' and `pretty-magit-symbols' to magit buffers."
+    (interactive)
+    (with-silent-modifications
+      (--each pretty-magit-faces
+        (save-excursion
+          (evil-goto-first-line)
+          (while (search-forward-regexp (car it) nil t)
+            (add-face-text-property
+             (match-beginning 1) (match-end 1) (cdr it)))))
+      (--each pretty-magit-symbols
+        (save-excursion
+          (evil-goto-first-line)
+          (while (search-forward-regexp (car it) nil t)
+            (compose-region
+             (match-beginning 1) (match-end 1) (cdr it)))))))
+
+  (setq use-magit-commit-prompt-p nil)
+  (defun use-magit-commit-prompt (&rest args)
+    (setq use-magit-commit-prompt-p t))
+
+  (defun magit-commit-prompt ()
+    "Magit prompt and insert commit header with faces."
+    (interactive)
+    (when use-magit-commit-prompt-p
+      (setq use-magit-commit-prompt-p nil)
+      (insert (ivy-read "Commit Type "
+                        '("Feature: " "Add: " "Fix: " "Clean: " "Docs: ")
+                        :require-match t
+                        :sort t
+                        :preselect "Add: "))
+      (add-magit-faces)
+      (evil-insert 1)))
+
+  ;; Now due to the delayed use of minibuffer in commit buffers, we cannot
+  ;; use add-advice and instead use `git-commit-setup-hook' to run the prompt.
+  ;; However, we only want the prompt for c-c `magit-commit' and not its
+  ;; variants. The only way to distinguish the calling commit mode is through
+  ;; the caller, so we use advice add on `magit-commit' for a prompt predicate.
+
+  (remove-hook 'git-commit-setup-hook 'with-editor-usage-message)
+  (add-hook 'git-commit-setup-hook 'magit-commit-prompt)
+
+  (advice-add 'magit-status :after 'add-magit-faces)
+  (advice-add 'magit-refresh-buffer :after 'add-magit-faces)
+  (advice-add 'magit-commit :after 'use-magit-commit-prompt))
+
+;;;; Prettify-symbols
+
+(defun module/display/prettify-symbols ()
+  "Visually replace text with unicode.
+Ivy keybinding has 'SPC i u' for consel-unicode-char for exploring options."
+
+  (setq pretty-options
+        (-flatten
+         (prettify-utils-generate
+          ;;;;; Functional
+          (:lambda      "λ") (:def         "ƒ")
+          (:composition "∘")
+
+          ;;;;; Types
+          (:null        "∅") (:true        "𝕋") (:false       "𝔽")
+          (:int         "ℤ") (:float       "ℝ")
+          (:str         "𝕊") (:bool        "𝔹")
+
+          ;;;;; Flow
+          (:in          "∈") (:not-in      "∉")
+          (:return     "⟼") (:yield      "⟻")
+          (:not         "￢")
+          (:for         "∀")
+
+          ;;;;; Other
+          (:tuple       "⨂")
+          (:pipe        "")
+          )))
+
+  (defun get-pretty-pairs (KWDS)
+    "Utility to build an alist for prettify-symbols-alist from components.
+KWDS is a plist of pretty option and the text to be replaced for it."
+    (-non-nil
+     (--map (when-let (major-mode-sym (plist-get KWDS it))
+             `(,major-mode-sym
+               ,(plist-get pretty-options it)))
+           pretty-options)))
+
+  (setq hy-pretty-pairs
+        (get-pretty-pairs
+         '(:lambda "fn" :def "defn"
+                   :composition "comp"
+                   :null "None" :true "True" :false "False"
+                   :in "in" :not "not"
+                   :tuple "#t"
+                   :pipe "ap-pipe"
+                   ))
+
+        python-pretty-pairs
+        (append
+         (get-pretty-pairs
+          '(:lambda "lambda" :def "def"
+                    :null "None" :true "True" :false "False"
+                    :int "int" :float "float" :str "str" :bool "bool"
+                    :not "not" :for "for" :in "in" :not-in "not in"
+                    :return "return" :yield "yield"
+                    :tuple "Tuple"
+                    :pipe "tz-pipe"
+                    ))
+         (prettify-utils-generate
+          ;; Mypy Stuff
+          ("Dict"     "𝔇") ("List"     "ℒ")
+          ("Callable" "ℱ") ("Mapping"  "ℳ") ("Iterable" "𝔗")
+          ("Union"    "⋃") ("Any"      "❔")))
+        )
+
+  (defun set-pretty-pairs (HOOK-PAIRS-ALIST)
+    "Utility to set pretty pairs for many modes.
+MODE-HOOK-PAIRS-ALIST is an alist of the mode hoook and its pretty pairs."
+    (mapc (lambda (x)
+            (lexical-let ((pretty-pairs (cadr x)))
+              (add-hook (car x)
+                        (lambda ()
+                          (setq prettify-symbols-alist pretty-pairs)))))
+          HOOK-PAIRS-ALIST))
+
+  (set-pretty-pairs `((hy-mode-hook     ,hy-pretty-pairs)
+                      (python-mode-hook ,python-pretty-pairs)))
+
+  (global-prettify-symbols-mode 1)
+  (global-pretty-mode t)
+
+  ;; Activate pretty groups
+  (pretty-activate-groups
+   '(:arithmetic-nary :greek))
+
+  ;; Deactivate pretty groups conflicting with Fira Code ligatures
+  (pretty-deactivate-groups  ; Replaced by Fira Code
+   '(:equality :ordering :ordering-double :ordering-triple
+               :arrows :arrows-twoheaded :punctuation
+               :logic :sets :sub-and-superscripts)))
 
 (defun jsg/configure-eshell ()
   "Eshell prettification."
@@ -834,3 +1378,351 @@ you should place your code here."
   (add-hook 'outline-minor-mode-hook 'outshine-hook-function)
   ;; Enables outline-minor-mode for *ALL* programming buffers!
   (add-hook 'prog-mode-hook 'outline-minor-mode))
+
+;;;; File-links
+
+(defun module/navigation/file-links ()
+  "Quick binding for opening org-formatted links anywhere."
+
+  (spacemacs/set-leader-keys (kbd "aof") 'org-open-at-point-global))
+
+;;;; Searching
+(defun module/navigation/searching ()
+  "Evil searching scrolls to center of match."
+
+  (advice-add 'evil-ex-search-next :after
+              (lambda (&rest x) (evil-scroll-line-to-center (line-number-at-pos))))
+  (advice-add 'evil-ex-search-previous :after
+              (lambda (&rest x) (evil-scroll-line-to-center (line-number-at-pos)))))
+
+;;; Org
+
+(defun module/org ()
+  (with-eval-after-load 'org
+    (when-linux-call 'module/org/linux-file-apps)
+    (module/org/babel)
+    (module/org/exports)
+    (module/org/gcal)
+    (module/org/misc)
+    (module/org/templates)
+    (module/org/theming)))
+
+;;;; Linux-file-apps
+
+(defun module/org/linux-file-apps ()
+  "Modify default file apps for Linux."
+
+  (setq org-file-apps '((auto-mode . emacs)
+                        ("\\.mm\\'" . default)
+                        ("\\.x?html?\\'" . "/usr/bin/firefox %s")
+                        ("\\.pdf\\'" . default))))
+
+;;;; Babel
+
+(defun module/org/babel ()
+  "Org babel languages and config."
+
+  (setq org-confirm-babel-evaluate nil
+        org-src-fontify-natively t
+        org-src-tab-acts-natively t
+        org-src-preserve-indentation t  ; Otherwise python is painful
+        org-src-window-setup 'current-window)  ; `, ,` opens in same window
+  (org-babel-do-load-languages
+   'org-babel-load-languages '((python .  t)
+                               (haskell . t)
+                               (clojure . t)
+                               (dot .     t)  ; Graphviz
+                               (http .    t)  ; Requests
+                               )))
+
+;;;; Exports
+
+(defun module/org/exports ()
+  "Org exporting setup."
+
+  (with-eval-after-load 'ox-bibtex  ; This eval might not be needed
+    (add-to-list 'org-latex-packages-alist '("" "minted"))
+    (setq
+     org-latex-listings 'minted
+     org-latex-minted-options
+     '(("frame" "lines")
+       ("fontsize" "\\scriptsize")
+       ("xleftmargin" "\\parindent")
+       ("linenos" ""))
+     org-latex-pdf-process
+     '("pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
+       "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
+       "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
+       ))))
+
+;;;; Gcal
+
+(defun module/org/gcal ()
+  "Org google calendar integration. Not actively using atm."
+
+  ;; TODO setup dropbox daemon on linux, try calfw, bind stuff
+  (require 'org-gcal)
+  (require 'org-contacts)
+  (load (if-linux "~/Dropbox/secrets.el"
+                  "c:/~/Dropbox/secrets.el") t)
+  (setq org-gcal-file-alist
+        `(("ekaschalk@gmail.com" .
+           ,(if-linux "~/Dropbox/schedule.org" "c:/~/Dropbox/schedule.org"))))
+  (setq org-contacts-files
+        `(,(if-linux "~/Dropbox/contacts.org" "c:/~/Dropbox/contacts.org")))
+  (setq org-agenda-files
+        `(,(if-linux "~/Dropbox/schedule.org" "c:/~/Dropbox/schedule.org"))))
+
+;;;; Misc
+
+(defun module/org/misc ()
+  "Misc org-mode bindings and improvements."
+
+  ;; Header property ignore for true no-export of header and its contents
+  (with-eval-after-load 'ox-extra
+    (ox-extras-activate '(ignore-headlines)))
+
+  ;; Quick refile of project tasks
+  (setq org-refile-targets
+        '((nil :regexp . "Week of")))
+
+  ;; Hide all org-blocks, including src, quote, etc. blocks, on buffer load
+  (defvar org-blocks-hidden nil)
+  (defun org-toggle-blocks ()
+    (interactive)
+    (if org-blocks-hidden
+        (org-show-block-all)
+      (org-hide-block-all))
+    (setq-local org-blocks-hidden (not org-blocks-hidden)))
+
+  (add-hook 'org-mode-hook 'org-toggle-blocks)
+  (define-key org-mode-map (kbd "C-c t") 'org-toggle-blocks)
+
+  ;; Enable flyspell in org-mode
+  (add-hook 'org-mode-hook 'flyspell-mode)
+
+  ;; Outline style navigation
+  (evil-define-key '(normal visual motion) org-mode-map
+    "gh" 'outline-up-heading
+    "gj" 'outline-forward-same-level
+    "gk" 'outline-backward-same-level
+    "gl" 'outline-next-visible-heading
+    "gu" 'outline-previous-visible-heading))
+
+;;;; Templates
+
+(defun module/org/templates ()
+  "Org-babel template code-block expansions."
+
+  (mapc (lambda (x) (add-to-list 'org-structure-template-alist x))
+        (list
+         ;; Name block
+         '("n" "#+NAME: ?")
+         ;; Language Blocks
+         '("c" "#+BEGIN_SRC clojure\n\n#+END_SRC")
+         '("e" "#+BEGIN_SRC emacs-lisp\n\n#+END_SRC")
+         '("l" "#+BEGIN_SRC lisp\n\n#+END_SRC")
+         '("h" "#+BEGIN_SRC haskell\n\n#+END_SRC")
+         '("p" "#+BEGIN_SRC python\n\n#+END_SRC")
+         ;; Graphviz Block
+         '("d" "#+BEGIN_SRC dot\n\n#+END_SRC")
+         ;; Collapse previous header by default in themed html export
+         '("clps" ":PROPERTIES:\n :HTML_CONTAINER_CLASS: hsCollapsed\n :END:\n")
+         )))
+
+;;;; Theming
+
+(defun module/org/theming ()
+  "Org theming updates."
+
+  (setq org-bullets-bullet-list '("■" "○" "✸" "✿")
+        org-priority-faces '((65 :inherit org-priority :foreground "red")
+                             (66 :inherit org-priority :foreground "yellow")
+                             (67 :inherit org-priority :foreground "blue"))
+        org-ellipsis "▼"))
+(defun module/display/theme-updates ()
+  "Face configuration for themes, atm solarized-light."
+
+  (setq my-black "#1b1b1e")
+
+  (custom-theme-set-faces
+   'solarized-light
+
+   ;; Makes matching parens obvious
+   `(sp-show-pair-match-face ((t (:inherit sp-show-pair-match-face
+                                           :background "light gray"))))
+
+   ;; active modeline has no colors
+   `(mode-line ((t (:inherit mode-line :background "#fdf6e3"))))
+   `(mode-line-inactive ((t (:inherit mode-line :background "#fdf6e3"))))
+   `(spaceline-highlight-face ((t (:inherit mode-line :background "#fdf6e3"))))
+   `(powerline-active1 ((t (:inherit mode-line :background "#fdf6e3"))))
+   `(powerline-active2 ((t (:inherit mode-line :background "#fdf6e3"))))
+
+   ;; Inactive modeline has tint
+   `(powerline-inactive2 ((t (:inherit powerline-inactive1))))
+
+   ;; Org and outline header updates
+   `(org-level-1 ((t (:height 1.25 :foreground ,my-black
+                              :background "#C9DAEA"
+                              :weight bold))))
+   `(org-level-2 ((t (:height 1.15 :foreground ,my-black
+                              :background "#7CDF64"
+                              :weight bold))))
+   `(org-level-3 ((t (:height 1.05 :foreground ,my-black
+                              :background "#F8DE7E"
+                              :weight bold))))
+
+   '(outline-1 ((t (:inherit org-level-1))))
+   '(outline-2 ((t (:inherit org-level-2))))
+   '(outline-3 ((t (:inherit org-level-3))))
+   '(outline-4 ((t (:inherit org-level-4))))
+
+   `(org-todo ((t (:foreground ,my-black :weight extra-bold
+                               :background "light gray"))))
+   `(org-priority ((t (:foreground ,my-black :weight bold
+                                   :background "light gray"))))
+   ))
+
+;;; Ivy
+
+(defun module/ivy ()
+  "Ivy completion framework configuration."
+
+  (defun ivy-file-transformer-fixed-for-files (s)
+    "Gets file icon for string, fixing bug for folders and windows box."
+    (format "%s\t%s"
+            (if (and is-linuxp (s-ends-with? "/" s))
+                (propertize "\t" 'display "" 'face 'all-the-icons-silver)
+              (propertize "\t" 'display (all-the-icons-icon-for-file s)))
+            s))
+
+  (advice-add 'all-the-icons-ivy-file-transformer
+              :override 'ivy-file-transformer-fixed-for-files)
+
+  (all-the-icons-ivy-setup)
+
+  ;; Perform default action on avy-selected minibuffer line
+  (define-key ivy-minibuffer-map (kbd "C-l") 'ivy-avy)
+  ;; Evil-like scrolling of ivy minibuffer
+  (define-key ivy-minibuffer-map (kbd "C-u") 'ivy-scroll-down-command)
+  (define-key ivy-minibuffer-map (kbd "C-d") 'ivy-scroll-up-command)
+
+  ;; Rebind C-n/C-y/C-p to narrow/yank from buffer/paste into buffer
+  (define-key ivy-minibuffer-map (kbd "C-n") 'ivy-restrict-to-matches)
+  (define-key ivy-minibuffer-map (kbd "C-y") 'ivy-yank-word)
+  ;; Read-only buffer of candidates with shortcuts to dispatches
+  (define-key ivy-minibuffer-map (kbd "C-o") 'ivy-occur)
+
+  ;; Non-exiting default action
+  (define-key ivy-minibuffer-map (kbd "C-<return>") 'ivy-call)
+  ;; Dispatch actions
+  (define-key ivy-minibuffer-map (kbd "C-SPC") 'ivy-dispatching-done)
+  (define-key ivy-minibuffer-map (kbd "C-S-SPC") 'ivy-dispatching-call)
+
+  ;; Resume last ivy session
+  (spacemacs/set-leader-keys (kbd "ai") 'ivy-resume)
+
+  (setq ivy-format-function 'ivy-format-function-arrow
+        ivy-height 20
+        completion-in-region-function 'ivy-completion-in-region))
+
+;;; Configuration
+
+(defun module/configuration ()
+  (module/configuration/editing)
+  (module/configuration/evil)
+  (module/configuration/visual))
+
+;;;; Editing
+
+(defun module/configuration/editing ()
+  "Editing toggles."
+
+  (hungry-delete-mode 1)                                ; cut contiguous space
+  (spacemacs/toggle-aggressive-indent-globally-on)      ; auto-indentation
+  (add-hook 'org-mode-hook (lambda () (auto-fill-mode 1))))  ; SPC splits past 80
+
+;;;; Evil
+
+(defun module/configuration/evil ()
+  "Update evil settings."
+
+  (setq-default evil-escape-key-sequence "jk"
+                evil-escape-unordered-key-sequence "true"))
+
+;;;; Visual
+
+(defun module/configuration/visual ()
+  "Visual toggles."
+
+  (spacemacs/toggle-highlight-long-lines-globally-on)
+  (fringe-mode '(1 . 1))                         ; Minimal left padding
+  (rainbow-delimiters-mode-enable)               ; Paren color based on depth
+  (global-highlight-parentheses-mode 1)          ; Highlight containing parens
+  (spacemacs/toggle-mode-line-minor-modes-off))  ; no uni symbs next to major
+
+;;; Misc
+
+(defun module/misc ()
+  (when-linux-call 'module/misc/spotify)
+  (module/misc/aspell)
+  (module/misc/auto-completion)
+  (module/misc/gnus)
+  (module/misc/lisp-state)
+  (module/misc/macros)
+  (module/misc/neotree)
+  (module/misc/projectile)
+  (module/misc/shell)
+  (module/misc/windows)
+  (module/misc/yassnippet))
+
+;;;; Spotify
+
+(defun module/misc/spotify ()
+  "Spotify-plus bindings."
+
+  ;; TODO must overwrite navi mode for M-s s
+  (global-set-key (kbd "M-s s") 'helm-spotify-plus)
+  (global-set-key (kbd "M-s j") 'helm-spotify-plus-play)
+  (global-set-key (kbd "M-s SPC") 'helm-spotify-plus-pause)
+  (global-set-key (kbd "M-s l") 'helm-spotify-plus-next)
+  (global-set-key (kbd "M-s h") 'helm-spotify-plus-previous))
+
+;;;; Aspell
+
+(defun module/misc/aspell ()
+  "Setup aspell."
+
+  (setq ispell-program-name "aspell"))
+
+;;;; Auto-completion
+
+(defun module/misc/auto-completion ()
+  "Autocompletion face modifications."
+
+  (custom-set-faces
+   '(company-tooltip-common
+     ((t (:inherit company-tooltip :weight bold :underline nil))))
+   '(company-tooltip-common-selection
+     ((t (:inherit company-tooltip-selection :weight bold :underline nil))))))
+(defun dotspacemacs/emacs-custom-settings ()
+  "Emacs custom settings.
+This is an auto-generated function, do not modify its content directly, use
+Emacs customize menu instead.
+This function is called at the very end of Spacemacs initialization."
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(package-selected-packages
+   (quote
+    (spotify helm-spotify js-doc company-tern dash-functional tern coffee-mode highlight-parentheses evil-nerd-commenter define-word zonokai-theme zenburn-theme zen-and-art-theme xterm-color xkcd ws-butler winum white-sand-theme which-key volatile-highlights virtualenvwrapper vi-tilde-fringe uuidgen use-package underwater-theme ujelly-theme twilight-theme twilight-bright-theme twilight-anti-bright-theme tronesque-theme toxi-theme toc-org tao-theme tangotango-theme tango-plus-theme tango-2-theme symon sunny-day-theme sublimity sublime-themes subatomic256-theme subatomic-theme string-inflection spaceline-all-the-icons spacegray-theme soothe-theme solarized-theme soft-stone-theme soft-morning-theme soft-charcoal-theme smyx-theme smeargle shell-pop seti-theme sayid reverse-theme reveal-in-osx-finder restclient-helm restart-emacs rebecca-theme rainbow-delimiters railscasts-theme purple-haze-theme professional-theme pretty-mode prettify-utils popwin planet-theme phoenix-dark-pink-theme phoenix-dark-mono-theme persp-mode pcre2el pbcopy pastels-on-dark-theme password-generator paradox osx-trash osx-dictionary orgit organic-green-theme org-vcard org-sticky-header org-projectile org-present org-pomodoro org-gcal org-download org-bullets open-junk-file omtose-phellack-theme oldlace-theme occidental-theme obsidian-theme ob-restclient ob-http noctilux-theme niflheim-theme neotree navi-mode naquadah-theme mustang-theme multi-term move-text monokai-theme monochrome-theme molokai-theme moe-theme mmm-mode minimal-theme mic-paren material-theme markdown-toc majapahit-theme magithub magit-gitflow magit-gh-pulls madhat2r-theme macrostep lush-theme lorem-ipsum lispy linum-relative link-hint light-soap-theme launchctl jbeans-theme jazz-theme ir-black-theme inkpot-theme info+ indent-guide ibuffer-projectile hungry-delete htmlize hl-todo highlight-numbers highlight-indentation hide-comnt heroku-theme hemisu-theme help-fns+ helm-themes helm-swoop helm-spotify-plus helm-purpose helm-projectile helm-mode-manager helm-make helm-gitignore helm-flx helm-descbinds helm-company helm-c-yasnippet helm-ag hc-zenburn-theme gruvbox-theme gruber-darker-theme grandshell-theme gotham-theme google-translate golden-ratio gnuplot github-search github-clone gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link git-gutter-fringe git-gutter-fringe+ gist gh-md gandalf-theme fuzzy flx-ido flatui-theme flatland-theme firebelly-theme fill-column-indicator farmhouse-theme fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-snipe evil-search-highlight-persist evil-org evil-numbers evil-mc evil-matchit evil-magit evil-lisp-state evil-lion evil-indent-plus evil-iedit-state evil-exchange evil-escape evil-ediff evil-commentary evil-args evil-anzu espresso-theme eshell-z eshell-prompt-extras esh-help elisp-slime-nav editorconfig dumb-jump dracula-theme django-theme diff-hl deft darktooth-theme darkokai-theme darkmine-theme darkburn-theme dakrone-theme cyberpunk-theme company-statistics company-restclient column-enforce-mode color-theme-solarized color-theme-sanityinc-tomorrow color-theme-sanityinc-solarized clues-theme clojure-snippets clj-refactor clean-aindent-mode cider-eval-sexp-fu cherry-blossom-theme calfw busybee-theme bubbleberry-theme browse-at-remote birds-of-paradise-plus-theme badwolf-theme auto-yasnippet auto-highlight-symbol auto-compile apropospriate-theme anti-zenburn-theme ample-zen-theme ample-theme all-the-icons-ivy alect-themes aggressive-indent afternoon-theme adaptive-wrap ace-link ace-jump-helm-line ac-ispell))))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
+)
