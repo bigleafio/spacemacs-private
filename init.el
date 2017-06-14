@@ -2,6 +2,15 @@
 ;; -*- mode: emacs-lisp -*-
 ;; This file is loaded by Spacemacs at startup.
 ;; It must be stored in your home directory.
+;; Utilities for integrating Windows and Linux.
+
+(setq is-linuxp (eq system-type 'gnu/linux))
+(defun if-linux (x y) (if is-linuxp x y)) 
+(defun if-linux-call (x y) (if is-linuxp (funcall x) (funcall y)))
+(defun when-linux (x) (when is-linuxp x))
+(defun when-linux-call (x) (when is-linuxp (funcall x)))
+(defun unless-linux (x) (unless is-linuxp x))
+(defun unless-linux-call (x) (unless is-linuxp (funcall x)))
 
 (defun dotspacemacs/layers ()
   "Configuration Layers declaration.
@@ -31,14 +40,7 @@ values."
    dotspacemacs-configuration-layer-path '()
    ;; List of configuration layers to load.
    dotspacemacs-configuration-layers
-   '(javascript
-     ;; ----------------------------------------------------------------
-     ;; Example of useful layers you may want to use right away.
-     ;; Uncomment some layer names and press <SPC f e R> (Vim style) or
-     ;; <M-m f e R> (Emacs style) to install them.
-     ;; ----------------------------------------------------------------
-
-
+   '(
      helm
      evil-commentary
      (evil-snipe :variables
@@ -51,22 +53,38 @@ values."
                          auto-completion-tab-key-behavior 'complete
                          auto-completion-enable-snippets-in-popup t)
      (ibuffer :variables ibuffer-group-buffers-by 'projects)
-     clojure
+     (clojure :variables
+              clojure-enable-fancify-symbols nil)
+     (haskell :variables
+              haskell-completion-backend 'intero)
+     (python :variables
+             python-sort-imports-on-save t
+             python-test-runner 'pytest)
+
      gnus
      emacs-lisp
      deft
      osx
+     ranger
+     better-defaults
      git
      github
      version-control
      markdown
      org
+     theming
+     ;;themes-megapack
+     (colors :variables
+              colors-enable-nyan-cat-progress-bar t )
      (restclient :variables
                  restclient-use-org t)
      spotify
      (shell :variables
              shell-default-shell 'eshell)
-     version-control
+     (version-control :variables
+                      version-control-global-margin t
+                      version-control-diff-tool 'git-gutter+)
+
      xkcd
      javascript
      )
@@ -76,8 +94,7 @@ values."
    ;; configuration in `dotspacemacs/user-config'.
    dotspacemacs-additional-packages '(sublimity
                                       mic-paren
-                                      color-theme-solarized
-                                      solarized-theme
+                                      color-theme-sanityinc-solarized
                                       org-sticky-header
                                       org-plus-contrib
                                       org-gcal
@@ -93,13 +110,6 @@ values."
                                       ;;helm-spotify-plus        ; Spotify improvements
                                       virtualenvwrapper        ; Python environment management
 
-                                      ;; Visual Enhancements
-                                      all-the-icons-ivy        ; Ivy prompts use file icons
-                                      pretty-mode              ; Adds onto prettify-mode
-                                      spaceline-all-the-icons  ; Spaceline integrates file and other icons
-                                      (prettify-utils          ; Useful add pretty symbols macro
-                                       :location (recipe :fetcher github
-                                                         :repo "Ilazki/prettify-utils.el"))
      )
    ;; A list of packages that cannot be updated.
    dotspacemacs-frozen-packages '()
@@ -166,25 +176,25 @@ values."
    dotspacemacs-startup-lists '((projects . 5)
                                 (bookmarks . 5)
                                 (recents . 10)
-                               )
+                                )
    ;; True if the home buffer should respond to resize events.
    dotspacemacs-startup-buffer-responsive t
    ;; Default major mode of the scratch buffer (default `text-mode')
-   dotspacemacs-scratch-mode 'text-mode
+   dotspacemacs-scratch-mode 'org-mode
    ;; List of themes, the first of the list is loaded when spacemacs starts.
    ;; Press <SPC> T n to cycle to the next theme in the list (works great
    ;; with 2 themes variants, one dark and one light)
-   dotspacemacs-themes '(solarized-light
+   dotspacemacs-themes '(sanityinc-solarized-light
                          leuven)
-                                        ;gruvbox; If non nil the cursor color matches the state color in GUI Emacs.
+
    dotspacemacs-colorize-cursor-according-to-state t
    ;; Default font, or prioritized list of fonts. `powerline-scale' allows to
    ;; quickly tweak the mode-line size to make separators look not too crappy.
-   dotspacemacs-default-font '("Hack"
-                               :size 14
+   dotspacemacs-default-font '("Source Code Pro"
+                               :size 13
                                :weight normal
                                :width normal
-                               :powerline-scale 1.5)
+                               :powerline-scale 1.1)
    ;; The leader key
    dotspacemacs-leader-key "SPC"
    ;; The key used for Emacs commands (M-x) (after pressing on the leader key).
@@ -337,7 +347,7 @@ values."
    ;; `trailing' to delete only the whitespace at end of lines, `changed'to
    ;; delete only whitespace for changed lines or `nil' to disable cleanup.
    ;; (default nil)
-   dotspacemacs-whitespace-cleanup nil
+   dotspacemacs-whitespace-cleanup 'trailing
    ))
 
 (defun dotspacemacs/user-init ()
@@ -356,11 +366,39 @@ layers configuration.
 This is the place where most of your configurations should be done. Unless it is
 explicitly specified that a variable should be set before a package is loaded,
 you should place your code here."
-  (setq custom-file "~.emacs.d/private/.custom-settings.el")
-  ;;(setq inhibit-compacting-font-caches t)
 
+  (setq custom-file "~/.emacs.d/private/.custom-settings.el")
+  ;;(setq inhibit-compacting-font-caches t)
+  ;;(color-theme-sanityinc-solarized-light)
   ;; Customization
   ;;;;
+
+  ;; Get color-theme-solarized working. It is specified as an additional package
+;; above. First we setup some theme modifications - we must do this *before*
+;; we load the theme. Note that the color-theme-solarized package appears in
+;; the list of themes as plain old 'solarized'.
+(setq theming-modifications
+      '((sanityinc-solarized-light
+         ;; Provide a sort of "on-off" modeline whereby the current buffer has a nice
+         ;; bright blue background, and all the others are in cream.
+         ;; TODO: Change to use variables here. However, got error:
+         ;; (Spacemacs) Error in dotspacemacs/user-config: Wrong type argument: stringp, pd-blue
+         (mode-line :foreground "#e9e2cb" :background "#2075c7" :inverse-video nil)
+         (powerline-active1 :foreground "#e9e2cb" :background "#2075c7" :inverse-video nil)
+         (powerline-active2 :foreground "#e9e2cb" :background "#2075c7" :inverse-video nil)
+         (mode-line-inactive :foreground "#2075c7" :background "#e9e2cb" :inverse-video nil)
+         (powerline-inactive1 :foreground "#2075c7" :background "#e9e2cb" :inverse-video nil)
+         (powerline-inactive2 :foreground "#2075c7" :background "#e9e2cb" :inverse-video nil)
+         ;; Make a really prominent helm selection line.
+         (helm-selection :foreground "white" :background "red" :inverse-video nil)
+         ;; See comment above about dotspacemacs-colorize-cursor-according-to-state.
+         (cursor :background "#b58900")
+       )))
+
+(set-terminal-parameter nil 'background-mode 'light)
+(set-frame-parameter nil 'background-mode 'light)
+(spacemacs/load-theme 'sanityinc-solarized-light)
+
   (setq user-full-name "Jason Graham"
         user-mail-address "jgraham20@gmail.com")
 
@@ -372,14 +410,14 @@ you should place your code here."
   (add-to-list 'load-path "~/.spacemacs.d/local/")
   (add-to-list 'load-path "~/.secret/")
 
-  (setq powerline-default-separator 'arrow)
+  ;;(setq powerline-default-separator 'arrow)
 
   ;;(load "secret.el")
-  ;;(require 'sublimity)
-  ;;(require 'sublimity-scroll)
+  (require 'sublimity)
+  (require 'sublimity-scroll)
   ;; (require 'sublimity-map)
   ;; (require 'sublimity-attractive)
-  ;;(sublimity-mode 1)
+  (sublimity-mode 1)
 
   ;; Sets up exec-path-from shell
   ;; https://github.com/purcell/exec-path-from-shell
@@ -402,7 +440,7 @@ you should place your code here."
 
   ;; Highlights matching parenthesis
   (show-paren-mode 1)
-
+  (fancy-battery-mode)
   ;; Highlight current line
   (global-hl-line-mode 1)
   ;; When you visit a file, point goes to the last place where it
@@ -444,32 +482,6 @@ you should place your code here."
 (define-key smartparens-mode-map (kbd "C-M-<left>") 'sp-backward-slurp-sexp)
 (define-key smartparens-mode-map (kbd "C-M-<right>") 'sp-backward-barf-sexp)
 
-;; Get color-theme-solarized working. It is specified as an additional package
-;; above. First we setup some theme modifications - we must do this *before*
-;; we load the theme. Note that the color-theme-solarized package appears in
-;; the list of themes as plain old 'solarized'.
-(setq theming-modifications
-      '((solarized
-         ;; Provide a sort of "on-off" modeline whereby the current buffer has a nice
-         ;; bright blue background, and all the others are in cream.
-         ;; TODO: Change to use variables here. However, got error:
-         ;; (Spacemacs) Error in dotspacemacs/user-config: Wrong type argument: stringp, pd-blue
-         (mode-line :foreground "#e9e2cb" :background "#2075c7" :inverse-video nil)
-         (powerline-active1 :foreground "#e9e2cb" :background "#2075c7" :inverse-video nil)
-         (powerline-active2 :foreground "#e9e2cb" :background "#2075c7" :inverse-video nil)
-         (mode-line-inactive :foreground "#2075c7" :background "#e9e2cb" :inverse-video nil)
-         (powerline-inactive1 :foreground "#2075c7" :background "#e9e2cb" :inverse-video nil)
-         (powerline-inactive2 :foreground "#2075c7" :background "#e9e2cb" :inverse-video nil)
-         ;; Make a really prominent helm selection line.
-         (helm-selection :foreground "white" :background "red" :inverse-video nil)
-         ;; See comment above about dotspacemacs-colorize-cursor-according-to-state.
-         (cursor :background "#b58900")
-       )))
-
-;;(set-terminal-parameter nil 'background-mode 'dark)
-;;(set-frame-parameter nil 'background-mode 'dark)
-;;(spacemacs/load-theme 'solarized)
-
 (setq blink-matching-paren nil)
 (paren-activate)
 (setq paren-match-face 'mode-line)
@@ -478,29 +490,53 @@ you should place your code here."
 (setq projectile-indexing-method 'native)
 
 (if (memq window-system '(w32)) 'module/display/windows-frame-size-fix)
-;; Group 2
-;;(module/display/fontsets)
-;;(module/display/font-locks)
 
-;; Rest
-;;(module/display/all-the-icons)
-;;(module/display/extra-syntax-highlighting)
-;;(module/display/modeline)
 (module/display/outline-ellipsis-modification)
 (jsg/configure-magit)
-(module/display/prettify-symbols)
-;;(module/display/theme-updates)
-(module/navigation)
-(module/misc)
-;;(module/ivy)
-(module/configuration)
+
 (jsg/configure-eshell)
+(module/org)
 (jsg/configure-org-mode)
 (jsg/configure-navi-mode)
 (jsg/configure-outshine)
 
-
 )
+
+(defun module/navigation ()
+  (module/navigation/avy)
+  (module/navigation/extra-bindings)
+  (module/navigation/file-links)
+  (module/navigation/searching))
+
+(defun module/org ()
+  (with-eval-after-load 'org
+    (module/org/babel)
+    (module/org/exports)
+    (module/org/gcal)
+    (module/org/misc)
+    (module/org/templates)
+    (module/org/theming)))
+;;; Misc
+
+(defun module/misc ()
+  ;;(when-linux-call 'module/misc/spotify)
+  (module/misc/aspell)
+  (module/misc/auto-completion)
+  (module/misc/gnus)
+  (module/misc/lisp-state)
+  (module/misc/macros)
+  (module/misc/neotree)
+  (module/misc/projectile)
+  (module/misc/shell)
+  (module/misc/windows)
+  (module/misc/yassnippet))
+
+;;; Configuration
+
+(defun module/configuration ()
+  (module/configuration/editing)
+  (module/configuration/evil)
+  (module/configuration/visual))
 
 (defun jsg/configure-org-mode ()
   (require 'org-checklist)
@@ -637,32 +673,6 @@ you should place your code here."
 
       )
 
-(defun module/navigation ()
-  (module/navigation/avy)
-  (module/navigation/extra-bindings)
-  (module/navigation/file-links)
-  (module/navigation/searching))
-
-(defun module/navigation/extra-bindings ()
-  "Rebind H, L, and 0 to BOL, EOL, old %."
-
-  ;; H and L move to modified BOL and EOL
-  (evil-global-set-key 'normal (kbd "H") 'evil-first-non-blank)
-  (evil-global-set-key 'visual (kbd "H") 'evil-first-non-blank)
-  (evil-global-set-key 'motion (kbd "H") 'evil-first-non-blank)
-
-  (evil-global-set-key 'normal (kbd "L") 'evil-end-of-line)
-  (evil-global-set-key 'visual (kbd "L")
-                       (lambda () (interactive)  ; otherwise it goes past EOL
-                         (evil-end-of-line)))
-  (evil-global-set-key 'motion (kbd "L") 'evil-end-of-line)
-
-  ;; I find '%' very useful but an annoying to reach binding.
-  ;; Since H is bound to BOL, we can rebind it to 0.
-  (evil-global-set-key 'normal (kbd "0") 'evil-jump-item)
-  (evil-global-set-key 'visual (kbd "0") 'evil-jump-item)
-  (evil-global-set-key 'motion (kbd "0") 'evil-jump-item))
-
 ;;;; Windows-frame-size-fix
 
 (defun module/display/windows-frame-size-fix ()
@@ -672,227 +682,6 @@ you should place your code here."
   (set-face-attribute 'default t :font "Hack")
   (global-set-key (kbd "<f2>")
                   (lambda () (interactive) (mapc (lambda (x) (zoom-frm-out)) '(1 2)))))
-
-;;;; Fontsets
-
-(defun module/display/fontsets ()
-  "Set right fonts for missing and all-the-icons unicode points."
-
-  ;; Fira code ligatures. Fira Code Symbol is a different font than Fira Code!
-  ;; You can use any font you wish with just the ligatures, I use Hack.
-  (set-fontset-font t '(#Xe100 . #Xe16f) "Fira Code Symbol")
-
-  (defun set-icon-fonts (CODE-FONT-ALIST)
-    "Utility to associate unicode points with a chosen font.
-CODE-FONT-ALIST is an alist of a font and unicode points to force to use it."
-    (mapc (lambda (x)
-            (let ((font (car x))
-                  (codes (cdr x)))
-              (mapc (lambda (code)
-                      (set-fontset-font t `(,code . ,code) font))
-                    codes)))
-          CODE-FONT-ALIST))
-
-  ;; NOTE The icons you see are not the correct icons until this is evaluated
-  (set-icon-fonts
-   '(("fontawesome"
-      ;;              
-      #xf07c #xf0c9 #xf0c4 #xf0cb)
-
-     ("all-the-icons"
-      ;;    
-      #xe907 #xe928)
-
-     ("material"
-      ;; 
-      #xe192)
-
-     ("github-octicons"
-      ;;              
-      #xf091 #xf059 #xf076 #xf075)
-
-     ("fileicons"
-      ;; 
-      #xf016)
-
-     ("Symbola"
-      ;; 𝕊    ⨂      ∅      ⟻    ⟼     ⊙      𝕋       𝔽
-      #x1d54a #x2a02 #x2205 #x27fb #x27fc #x2299 #x1d54b #x1d53d
-      ;; 𝔹    𝔇       𝔗
-      #x1d539 #x1d507 #x1d517))))
-
-;;;; Font-locks
-;;;;; Core
-
-(defun module/display/font-locks ()
-  "Enable following font-locks for appropriate modes."
-
-  (defun -add-font-lock-kwds (FONT-LOCK-ALIST)
-    "Add unicode font lock replacements.
-FONT-LOCK-ALIST is an alist of a regexp and the unicode point to replace with.
-Used as: (add-hook 'a-mode-hook (-partial '-add-font-lock-kwds the-alist))"
-    (defun -build-font-lock-alist (REGEX-CHAR-PAIR)
-      "Compose region for each REGEX-CHAR-PAIR in FONT-LOCK-ALIST."
-      `(,(car REGEX-CHAR-PAIR)
-        (0 (prog1 ()
-             (compose-region
-              (match-beginning 1)
-              (match-end 1)
-              ,(concat "	"
-                       (list (cadr REGEX-CHAR-PAIR))))))))
-    (font-lock-add-keywords nil (mapcar '-build-font-lock-alist FONT-LOCK-ALIST)))
-
-  (defun add-font-locks (FONT-LOCK-HOOKS-ALIST)
-    "Utility to add font lock alist to many hooks.
-FONT-LOCK-HOOKS-ALIST is an alist of a font-lock-alist and its desired hooks."
-    (mapc (lambda (x)
-            (lexical-let ((font-lock-alist (car x))
-                          (mode-hooks (cdr x)))
-              (mapc (lambda (mode-hook)
-                      (add-hook mode-hook
-                                (-partial '-add-font-lock-kwds font-lock-alist)))
-                    mode-hooks)))
-          FONT-LOCK-HOOKS-ALIST))
-
-  (require 'navi-mode)  ; TODO handle this require better for the navi font-locks
-  (add-font-locks
-   `((,fira-font-lock-alist        prog-mode-hook  org-mode-hook)
-     (,python-font-lock-alist      python-mode-hook)
-     (,emacs-lisp-font-lock-alist  emacs-lisp-mode-hook)
-     (,hy-font-lock-alist          hy-mode-hook)
-     (,navi-font-lock-alist        navi-mode-hook)
-     )))
-
-;;;;; Fira-font-locks
-
-(defconst fira-font-lock-alist
-  '(;;;; OPERATORS
-    ;;;;; Pipes
-    ("\\(<|\\)" #Xe14d) ("\\(<>\\)" #Xe15b) ("\\(<|>\\)" #Xe14e) ("\\(|>\\)" #Xe135)
-
-    ;;;;; Brackets
-    ("\\(<\\*\\)" #Xe14b) ("\\(<\\*>\\)" #Xe14c) ("\\(\\*>\\)" #Xe104)
-    ("\\(<\\$\\)" #Xe14f) ("\\(<\\$>\\)" #Xe150) ("\\(\\$>\\)" #Xe137)
-    ("\\(<\\+\\)" #Xe155) ("\\(<\\+>\\)" #Xe156) ("\\(\\+>\\)" #Xe13a)
-
-    ;;;;; Equality
-    ("\\(!=\\)" #Xe10e) ("\\(!==\\)"         #Xe10f) ("\\(=/=\\)" #Xe143)
-    ("\\(/=\\)" #Xe12c) ("\\(/==\\)"         #Xe12d)
-    ("\\(===\\)"#Xe13d) ("[^!/]\\(==\\)[^>]" #Xe13c)
-
-    ;;;;; Equality Special
-    ("\\(||=\\)"  #Xe133) ("[^|]\\(|=\\)" #Xe134)
-    ("\\(~=\\)"   #Xe166)
-    ("\\(\\^=\\)" #Xe136)
-    ("\\(=:=\\)"  #Xe13b)
-
-    ;;;;; Comparisons
-    ("\\(<=\\)" #Xe141) ("\\(>=\\)" #Xe145)
-    ("\\(</\\)" #Xe162) ("\\(</>\\)" #Xe163)
-
-    ;;;;; Shifts
-    ("[^-=]\\(>>\\)" #Xe147) ("\\(>>>\\)" #Xe14a)
-    ("[^-=]\\(<<\\)" #Xe15c) ("\\(<<<\\)" #Xe15f)
-
-    ;;;;; Dots
-    ("\\(\\.-\\)"    #Xe122) ("\\(\\.=\\)" #Xe123)
-    ("\\(\\.\\.<\\)" #Xe125)
-
-    ;;;;; Hashes
-    ("\\(#{\\)"  #Xe119) ("\\(#(\\)"   #Xe11e) ("\\(#_\\)"   #Xe120)
-    ("\\(#_(\\)" #Xe121) ("\\(#\\?\\)" #Xe11f) ("\\(#\\[\\)" #Xe11a)
-
-    ;;;; REPEATED CHARACTERS
-    ;;;;; 2-Repeats
-    ("\\(||\\)" #Xe132)
-    ("\\(!!\\)" #Xe10d)
-    ("\\(%%\\)" #Xe16a)
-    ("\\(&&\\)" #Xe131)
-
-    ;;;;; 2+3-Repeats
-    ("\\(##\\)"       #Xe11b) ("\\(###\\)"         #Xe11c) ("\\(####\\)" #Xe11d)
-    ("\\(--\\)"       #Xe111) ("\\(---\\)"         #Xe112)
-    ("\\({-\\)"       #Xe108) ("\\(-}\\)"          #Xe110)
-    ("\\(\\\\\\\\\\)" #Xe106) ("\\(\\\\\\\\\\\\\\)" #Xe107)
-    ("\\(\\.\\.\\)"   #Xe124) ("\\(\\.\\.\\.\\)"   #Xe126)
-    ("\\(\\+\\+\\)"   #Xe138) ("\\(\\+\\+\\+\\)"   #Xe139)
-    ("\\(//\\)"       #Xe12f) ("\\(///\\)"         #Xe130)
-    ("\\(::\\)"       #Xe10a) ("\\(:::\\)"         #Xe10b)
-
-    ;;;; ARROWS
-    ;;;;; Direct
-    ("[^-]\\(->\\)" #Xe114) ("[^=]\\(=>\\)" #Xe13f)
-    ("\\(<-\\)"     #Xe152)
-    ("\\(-->\\)"    #Xe113) ("\\(->>\\)"    #Xe115)
-    ("\\(==>\\)"    #Xe13e) ("\\(=>>\\)"    #Xe140)
-    ("\\(<--\\)"    #Xe153) ("\\(<<-\\)"    #Xe15d)
-    ("\\(<==\\)"    #Xe158) ("\\(<<=\\)"    #Xe15e)
-    ("\\(<->\\)"    #Xe154) ("\\(<=>\\)"    #Xe159)
-
-    ;;;;; Branches
-    ("\\(-<\\)"  #Xe116) ("\\(-<<\\)" #Xe117)
-    ("\\(>-\\)"  #Xe144) ("\\(>>-\\)" #Xe148)
-    ("\\(=<<\\)" #Xe142) ("\\(>>=\\)" #Xe149)
-    ("\\(>=>\\)" #Xe146) ("\\(<=<\\)" #Xe15a)
-
-    ;;;;; Squiggly
-    ("\\(<~\\)" #Xe160) ("\\(<~~\\)" #Xe161)
-    ("\\(~>\\)" #Xe167) ("\\(~~>\\)" #Xe169)
-    ("\\(-~\\)" #Xe118) ("\\(~-\\)"  #Xe165)
-
-    ;;;; MISC
-    ("\\(www\\)"                   #Xe100)
-    ("\\(<!--\\)"                  #Xe151)
-    ("\\(~@\\)"                    #Xe164)
-    ("[^<]\\(~~\\)"                #Xe168)
-    ("\\(\\?=\\)"                  #Xe127)
-    ("[^=]\\(:=\\)"                #Xe10c)
-    ("\\(/>\\)"                    #Xe12e)
-    ("[^\\+<>]\\(\\+\\)[^\\+<>]"   #Xe16d)
-    ("[^:=]\\(:\\)[^:=]"           #Xe16c)
-    ("\\(<=\\)"                    #Xe157)
-  ))
-
-;;;;; Language-font-locks
-
-(defconst emacs-lisp-font-lock-alist
-  ;; Outlines not using * so better overlap with in-the-wild packages.
-  ;; Intentionally not requiring BOL for eg. fira config modularization
-  '(("\\(^;;;\\)"                   ?■)
-    ("\\(^;;;;\\)"                  ?○)
-    ("\\(^;;;;;\\)"                 ?✸)
-    ("\\(^;;;;;;\\)"                ?✿)))
-
-(defconst navi-font-lock-alist
-  ;; TODO ideally this would be major-mode specific, atm elisp
-  '(;; Outlines
-    ;; Hides numbers (numbers still needed for internal navi methods)
-    ("\\([ ]+[0-9]+:;;;\\) "                   ?■)
-    ("\\([ ]+[0-9]+:;;;;\\) "                  ?○)
-    ("\\([ ]+[0-9]+:;;;;;\\) "                 ?✸)
-    ("\\([ ]+[0-9]+:;;;;;;\\) "                ?✿)
-
-    ;; Hide first line
-    ("\\(.*matches.*$\\)"            ? )
-    ))
-
-(defconst python-font-lock-alist
-  ;; Outlines
-  '(("\\(^# \\*\\)[ \t\n]"          ?■)
-    ("\\(^# \\*\\*\\)[ \t\n]"       ?○)
-    ("\\(^# \\*\\*\\*\\)[ \t\n]"    ?✸)
-    ("\\(^# \\*\\*\\*\\*\\)[^\\*]"  ?✿)))
-
-(defconst hy-font-lock-alist
-  ;; Outlines
-  '(("\\(^;; \\*\\)[ \t\n]"          ?■)
-    ("\\(^;; \\*\\*\\)[ \t\n]"       ?○)
-    ("\\(^;; \\*\\*\\*\\)[ \t\n]"    ?✸)
-    ("\\(^;; \\*\\*\\*\\*\\)[^\\*]"  ?✿)
-
-    ;; self does not work as a prettify symbol for hy, unlike python
-    ("\\(self\\)"   ?⊙)))
-
 
 ;;;; All-the-icons
 
@@ -953,18 +742,8 @@ FONT-LOCK-HOOKS-ALIST is an alist of a font-lock-alist and its desired hooks."
                     spaceline-all-the-icons-icon-set-modified 'chain
                     spaceline-all-the-icons-icon-set-window-numbering 'circle
                     spaceline-all-the-icons-separators-type 'arrow
-                    spaceline-all-the-icons-primary-separator "")
-
-              ;; Toggles
-              (spaceline-toggle-all-the-icons-buffer-size-off)
-              (spaceline-toggle-all-the-icons-buffer-position-off)
-              (spaceline-toggle-all-the-icons-vc-icon-off)
-              (spaceline-toggle-all-the-icons-vc-status-off)
-              (spaceline-toggle-all-the-icons-git-status-off)
-              (spaceline-toggle-all-the-icons-flycheck-status-off)
-              (spaceline-toggle-all-the-icons-time-off)
-              (spaceline-toggle-all-the-icons-battery-status-off)
-              (spaceline-toggle-hud-off))))
+                    spaceline-all-the-icons-primary-separator "")))
+  (fancy-battery-mode))
 
 ;;;; Outline-ellipsis-modification
 
@@ -1230,6 +1009,7 @@ MODE-HOOK-PAIRS-ALIST is an alist of the mode hoook and its pretty pairs."
   "Project config, respect .projectile files."
 
   (setq projectile-indexing-method 'native))
+
 ;;;; Shell
 
 (defun module/misc/shell ()
@@ -1482,17 +1262,7 @@ MODE-HOOK-PAIRS-ALIST is an alist of the mode hoook and its pretty pairs."
   (advice-add 'evil-ex-search-previous :after
               (lambda (&rest x) (evil-scroll-line-to-center (line-number-at-pos)))))
 
-;;; Org
 
-(defun module/org ()
-  (with-eval-after-load 'org
-    ;;(when-linux-call 'module/org/linux-file-apps)
-    (module/org/babel)
-    (module/org/exports)
-    ;;(module/org/gcal)
-    (module/org/misc)
-    (module/org/templates)
-    (module/org/theming)))
 
 ;;;; Linux-file-apps
 
@@ -1714,12 +1484,7 @@ MODE-HOOK-PAIRS-ALIST is an alist of the mode hoook and its pretty pairs."
         ivy-height 20
         completion-in-region-function 'ivy-completion-in-region))
 
-;;; Configuration
 
-(defun module/configuration ()
-  (module/configuration/editing)
-  (module/configuration/evil)
-  (module/configuration/visual))
 
 ;;;; Editing
 
@@ -1749,20 +1514,7 @@ MODE-HOOK-PAIRS-ALIST is an alist of the mode hoook and its pretty pairs."
   (global-highlight-parentheses-mode 1)          ; Highlight containing parens
   (spacemacs/toggle-mode-line-minor-modes-off))  ; no uni symbs next to major
 
-;;; Misc
 
-(defun module/misc ()
-  ;;(when-linux-call 'module/misc/spotify)
-  (module/misc/aspell)
-  (module/misc/auto-completion)
-  (module/misc/gnus)
-  (module/misc/lisp-state)
-  (module/misc/macros)
-  (module/misc/neotree)
-  (module/misc/projectile)
-  (module/misc/shell)
-  (module/misc/windows)
-  (module/misc/yassnippet))
 
 ;;;; Avy
 
@@ -2032,23 +1784,3 @@ MODE-HOOK-PAIRS-ALIST is an alist of the mode hoook and its pretty pairs."
   (spacemacs/set-leader-keys (kbd "ab") 'deploy-blog)
   (spacemacs/set-leader-keys (kbd "aa") 'start-blog-server)
   (spacemacs/set-leader-keys (kbd "ae") 'end-blog-server))
-(defun dotspacemacs/emacs-custom-settings ()
-  "Emacs custom settings.
-This is an auto-generated function, do not modify its content directly, use
-Emacs customize menu instead.
-This function is called at the very end of Spacemacs initialization."
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(package-selected-packages
-   (quote
-    (counsel restclient-helm helm-spotify multi helm-gitignore helm-company helm-c-yasnippet highlight-parentheses helm-themes helm-swoop helm-purpose helm-projectile helm-mode-manager helm-flx helm-descbinds helm-ag evil-nerd-commenter define-word ace-jump-helm-line xterm-color xkcd ws-butler winum which-key wgrep web-beautify volatile-highlights virtualenvwrapper vi-tilde-fringe uuidgen use-package toc-org symon sublimity string-inflection spotify spaceline-all-the-icons solarized-theme smex smeargle shell-pop sayid reveal-in-osx-finder restart-emacs rainbow-delimiters pretty-mode prettify-utils popwin persp-mode pcre2el pbcopy password-generator paradox osx-trash osx-dictionary orgit org-vcard org-sticky-header org-projectile org-present org-pomodoro org-gcal org-download org-bullets open-junk-file ob-restclient ob-http neotree navi-mode multi-term move-text mmm-mode mic-paren markdown-toc magithub magit-gitflow magit-gh-pulls macrostep lorem-ipsum livid-mode lispy linum-relative link-hint launchctl json-mode js2-refactor js-doc ivy-purpose ivy-hydra info+ indent-guide ibuffer-projectile hungry-delete htmlize hl-todo highlight-numbers highlight-indentation hide-comnt help-fns+ helm-make google-translate golden-ratio gnuplot gitignore-mode github-search github-clone gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link git-gutter-fringe git-gutter-fringe+ gist gh-md fuzzy flx-ido fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-snipe evil-search-highlight-persist evil-org evil-numbers evil-mc evil-matchit evil-magit evil-lisp-state evil-lion evil-indent-plus evil-iedit-state evil-exchange evil-escape evil-ediff evil-commentary evil-args evil-anzu eshell-z eshell-prompt-extras esh-help elisp-slime-nav editorconfig dumb-jump diff-hl deft counsel-projectile company-tern company-statistics company-restclient column-enforce-mode color-theme-solarized coffee-mode clojure-snippets clj-refactor clean-aindent-mode cider-eval-sexp-fu calfw browse-at-remote auto-yasnippet auto-highlight-symbol auto-compile all-the-icons-ivy aggressive-indent adaptive-wrap ace-link ac-ispell))))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
-)
