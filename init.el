@@ -5,7 +5,7 @@
 ;; Utilities for integrating Windows and Linux.
 
 (setq is-linuxp (eq system-type 'gnu/linux))
-(defun if-linux (x y) (if is-linuxp x y)) 
+(defun if-linux (x y) (if is-linuxp x y))
 (defun if-linux-call (x y) (if is-linuxp (funcall x) (funcall y)))
 (defun when-linux (x) (when is-linuxp x))
 (defun when-linux-call (x) (when is-linuxp (funcall x)))
@@ -383,12 +383,12 @@ you should place your code here."
          ;; bright blue background, and all the others are in cream.
          ;; TODO: Change to use variables here. However, got error:
          ;; (Spacemacs) Error in dotspacemacs/user-config: Wrong type argument: stringp, pd-blue
-         (mode-line :foreground "#e9e2cb" :background "#2075c7" :inverse-video nil)
-         (powerline-active1 :foreground "#e9e2cb" :background "#2075c7" :inverse-video nil)
-         (powerline-active2 :foreground "#e9e2cb" :background "#2075c7" :inverse-video nil)
-         (mode-line-inactive :foreground "#2075c7" :background "#e9e2cb" :inverse-video nil)
-         (powerline-inactive1 :foreground "#2075c7" :background "#e9e2cb" :inverse-video nil)
-         (powerline-inactive2 :foreground "#2075c7" :background "#e9e2cb" :inverse-video nil)
+         (mode-line :foreground "#839496" :background "#eee8d5" :inverse-video nil)
+         (powerline-active1 :foreground "#839496" :background "#eee8d5" :inverse-video nil)
+         (powerline-active2 :foreground "#839496" :background "#eee8d5" :inverse-video nil)
+         (mode-line-inactive :foreground "#839496" :background "#eee8d5" :inverse-video nil)
+         (powerline-inactive1 :foreground "#839496" :background "#eee8d5" :inverse-video nil)
+         (powerline-inactive2 :foreground "#839496" :background "#eee8d5" :inverse-video nil)
          ;; Make a really prominent helm selection line.
          (helm-selection :foreground "white" :background "red" :inverse-video nil)
          ;; See comment above about dotspacemacs-colorize-cursor-according-to-state.
