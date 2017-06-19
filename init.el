@@ -5,6 +5,7 @@
 ;; Utilities for integrating Windows and Linux.
 
 (setq is-linuxp (eq system-type 'gnu/linux))
+(setq is-linuxp t)
 (defun if-linux (x y) (if is-linuxp x y))
 (defun if-linux-call (x y) (if is-linuxp (funcall x) (funcall y)))
 (defun when-linux (x) (when is-linuxp x))
@@ -102,7 +103,7 @@ values."
                                       lispy
                                       outshine                 ; Required for navi-mode
                                       navi-mode                ; Navbar on buffer outlines
-
+                                      forecast
                                       ;; Org
                                       org-vcard                ; Import/export google contacts
 
@@ -284,7 +285,7 @@ values."
    ;; If non nil the frame is maximized when Emacs starts up.
    ;; Takes effect only if `dotspacemacs-fullscreen-at-startup' is nil.
    ;; (default nil) (Emacs 24.4+ only)
-   dotspacemacs-maximized-at-startup t
+   dotspacemacs-maximized-at-startup nil
    ;; A value from the range (0..100), in increasing opacity, which describes
    ;; the transparency level of a frame when it's active or selected.
    ;; Transparency can be toggled through `toggle-transparency'. (default 90)
@@ -491,52 +492,48 @@ you should place your code here."
 
 (if (memq window-system '(w32)) 'module/display/windows-frame-size-fix)
 
-(module/display/outline-ellipsis-modification)
-(jsg/configure-magit)
-
-(jsg/configure-eshell)
+(module/configure-magit)
+(module/configure-eshell)
 (module/org)
-(jsg/configure-org-mode)
-(jsg/configure-navi-mode)
-(jsg/configure-outshine)
+
+(module/configure-navi-mode)
+(module/configure-outshine)
 
 )
 
-(defun module/navigation ()
-  (module/navigation/avy)
-  (module/navigation/extra-bindings)
-  (module/navigation/file-links)
-  (module/navigation/searching))
-
 (defun module/org ()
   (with-eval-after-load 'org
+
+    (setq org-modules '(
+      ;;org-bbdb
+        ;;              org-gnus
+        ;;              org-drill
+        ;;;;              org-info
+        ;;              org-jsinfo
+                      org-habit
+         ;;             org-irc
+                      org-mouse
+                      org-protocol
+                      org-annotate-file
+                      org-eval
+                      org-expiry
+                      org-interactive-query
+      ;;                org-man
+                      org-collector
+                      org-panel
+                      org-screen
+                      org-toc))
+
     (module/org/babel)
-    (module/org/exports)
-    (module/org/gcal)
+    ;;(module/org/exports)
+    ;;(module/org/gcal)
     (module/org/misc)
     (module/org/templates)
-    (module/org/theming)))
-;;; Misc
-
-(defun module/misc ()
-  ;;(when-linux-call 'module/misc/spotify)
-  (module/misc/aspell)
-  (module/misc/auto-completion)
-  (module/misc/gnus)
-  (module/misc/lisp-state)
-  (module/misc/macros)
-  (module/misc/neotree)
-  (module/misc/projectile)
-  (module/misc/shell)
-  (module/misc/windows)
-  (module/misc/yassnippet))
-
-;;; Configuration
-
-(defun module/configuration ()
-  (module/configuration/editing)
-  (module/configuration/evil)
-  (module/configuration/visual))
+    (module/org/weekly-review)
+    (jsg/configure-org-mode)
+    (module/org/mobile)
+    (module/org/org-projects)
+    ))
 
 (defun jsg/configure-org-mode ()
   (require 'org-checklist)
@@ -571,8 +568,8 @@ you should place your code here."
   (if (memq window-system '(w32))
       (setq jsg/home-dir "C:/Users/jg186074")
       (setq jsg/home-dir (expand-file-name "~")))
-  (setq org-directory (concat jsg/home-dir "/doc/"))
-  (setq org-default-notes-file (concat org-directory "inbox.org"))
+  (setq org-directory (concat jsg/home-dir "/notes/"))
+  (setq org-default-notes-file (concat org-directory "todo.org"))
   (setq jsg/org-default-habits-file (concat org-directory "habits.org"))
 
   ;; agenda
@@ -600,7 +597,7 @@ you should place your code here."
   ;; capture
   (setq org-capture-templates
         (quote (("w" "Add Work Task" entry
-      (file+headline "~/doc/todo.org" "Inbox")
+      (file+headline "~/notes/org/todo.org" "Inbox")
       "* TODO %? \n:SCHEDULED: %t \n:PROPERTIES:
 :CLIENT: \n:TICKET:
 :ID:       %(shell-command-to-string \"uuidgen\"):CREATED:  %U
@@ -626,12 +623,12 @@ you should place your code here."
                  "* NEXT %?\n%U\n%a\nSCHEDULED: %(format-time-string \"%<<%Y-%m-%d %a .+1d/3d>>\")\n:PROPERTIES:\n:STYLE: habit\n:REPEAT_TO_STATE: NEXT\n
 :END:" :prepend t)
      ("c" "Calendar" entry
-      (file+headline "~/doc/todo.org" "Inbox")
+      (file+headline "~/notes/org/todo.org" "Inbox")
       "* APPT %? \n:SCHEDULED: %t
 :PROPERTIES: \n:ID:       %(shell-command-to-string \"uuidgen\")
 :CREATED:  %U \n:END:" :prepend t)
       ("J" "Journal entry with date" plain
-         (file+datetree+prompt "~/doc/journal.org")
+         (file+datetree+prompt "~/notes/org/journal.org")
          "%K - %a\n%i\n%?\n"
          :unnarrowed t))))
 
@@ -646,7 +643,7 @@ you should place your code here."
 
   '(org-agenda-files
    (quote
-    ("~/doc/tasks/todo.org" "~/doc/tasks/habits.org" "~/doc/tasks/emacs.org")))
+    ("~/notes/org/todo.org" "~/notes/org/habits.org" "~/notes/org/inbox.org" "~/notes/org/church.org" "~/notes/org/journal.org" "~/notes/org/goals.org")))
 
    (setq org-agenda-text-search-extra-files '(agenda-archives))
 
@@ -673,95 +670,9 @@ you should place your code here."
 
       )
 
-;;;; Windows-frame-size-fix
-
-(defun module/display/windows-frame-size-fix ()
-  "Surface has 200% scaling, doesn't apply to emacs, fixes with push of `f2`."
-
-  (add-to-list 'default-frame-alist '(font . "Hack"))
-  (set-face-attribute 'default t :font "Hack")
-  (global-set-key (kbd "<f2>")
-                  (lambda () (interactive) (mapc (lambda (x) (zoom-frm-out)) '(1 2)))))
-
-;;;; All-the-icons
-
-(defun module/display/all-the-icons ()
-  "Add hylang icon to all-the-icons for neotree and modeline integration."
-
-  ;; Both all-the-icons-icon-alist and all-the-icons-mode-icon-alist
-  ;; need to be updated for either modification to take effect.
-  (with-eval-after-load 'all-the-icons
-    (add-to-list
-     'all-the-icons-icon-alist
-     '("\\.hy$" all-the-icons-fileicon "lisp" :face all-the-icons-orange))
-    (add-to-list
-     'all-the-icons-mode-icon-alist
-     '(hy-mode all-the-icons-fileicon "lisp" :face all-the-icons-orange))))
-
-;;;; Extra-syntax-highlighting
-
-(defun module/display/extra-syntax-highlighting ()
-  "Extra syntax highlighting for desired keywords."
-
-  (defun hy-extra-syntax ()
-    (font-lock-add-keywords
-     nil '(;; self is not defined by hy-mode as a keyword
-         ("\\<\\(self\\)" . 'font-lock-constant-face)
-
-         ;; Highlight entire line for decorators
-         ("\\(#@.*$\\)" . 'font-lock-function-name-face)
-
-         ;; Syntax highlighting for reader-macros
-         ("\\(#.\\)" . 'font-lock-function-name-face))))
-
-  (defun navi-extra-syntax ()
-    (font-lock-add-keywords
-     nil '(("\\([ ]+[0-9]+:;;;\\) .*$" .    'org-level-1)
-         ("\\([ ]+[0-9]+:;;;;\\) .*$" .   'org-level-2)
-         ("\\([ ]+[0-9]+:;;;;;\\) .*$" .  'org-level-3)
-         ("\\([ ]+[0-9]+:;;;;;\\) .*$" .  'org-level-4))))
-
-  (add-hook 'hy-mode-hook 'hy-extra-syntax)
-  (add-hook 'navi-mode-hook 'navi-extra-syntax))
-
-;;;; Modeline
-
-(defun module/display/modeline ()
-  "Minimalistic spaceline-all-the-icons configuration."
-
-  (use-package spaceline-all-the-icons
-    :after spaceline  ; eval-after-load doesn't work for this setup
-    :config (progn
-              ;; Initialization
-              (spaceline-all-the-icons--setup-neotree)
-              (spaceline-all-the-icons-theme)
-
-              ;; Configuration
-              (setq spaceline-highlight-face-func 'spaceline-highlight-face-default
-                    powerline-default-separator 'bar
-                    spaceline-all-the-icons-icon-set-modified 'chain
-                    spaceline-all-the-icons-icon-set-window-numbering 'circle
-                    spaceline-all-the-icons-separators-type 'arrow
-                    spaceline-all-the-icons-primary-separator "")))
-  (fancy-battery-mode))
-
-;;;; Outline-ellipsis-modification
-
-(defun module/display/outline-ellipsis-modification ()
-  "Org-ellipsis but for outline-minor-mode headings"
-
-  (defvar outline-display-table (make-display-table))
-  (set-display-table-slot outline-display-table 'selective-display
-                          (vector (make-glyph-code ?▼ 'escape-glyph)))
-  (defun set-outline-display-table ()
-    (setf buffer-display-table outline-display-table))
-
-  (add-hook 'outline-mode-hook 'set-outline-display-table)
-  (add-hook 'outline-minor-mode-hook 'set-outline-display-table))
-
 ;;;; Prettify-magit
 
-(defun jsg/configure-magit ()
+(defun module/configure-magit ()
   "Add faces to Magit manually for things like commit headers eg. (Add: ...).
 Adding faces to Magit is non-trivial since any use of font-lock will break
 fontification of the buffer. This is due to Magit doing all styling with
@@ -880,136 +791,6 @@ Can explore icons by evaluating eg.: (all-the-icons-insert-icons-for 'material)
   (advice-add 'magit-refresh-buffer :after 'add-magit-faces)
   (advice-add 'magit-commit :after 'use-magit-commit-prompt))
 
-;;;; Prettify-symbols
-
-(defun module/display/prettify-symbols ()
-  "Visually replace text with unicode.
-Ivy keybinding has 'SPC i u' for consel-unicode-char for exploring options."
-
-  (setq pretty-options
-        (-flatten
-         (prettify-utils-generate
-          ;;;;; Functional
-          (:lambda      "λ") (:def         "ƒ")
-          (:composition "∘")
-
-          ;;;;; Types
-          (:null        "∅") (:true        "𝕋") (:false       "𝔽")
-          (:int         "ℤ") (:float       "ℝ")
-          (:str         "𝕊") (:bool        "𝔹")
-
-          ;;;;; Flow
-          (:in          "∈") (:not-in      "∉")
-          (:return     "⟼") (:yield      "⟻")
-          (:not         "￢")
-          (:for         "∀")
-
-          ;;;;; Other
-          (:tuple       "⨂")
-          (:pipe        "")
-          )))
-
-  (defun get-pretty-pairs (KWDS)
-    "Utility to build an alist for prettify-symbols-alist from components.
-KWDS is a plist of pretty option and the text to be replaced for it."
-    (-non-nil
-     (--map (when-let (major-mode-sym (plist-get KWDS it))
-             `(,major-mode-sym
-               ,(plist-get pretty-options it)))
-           pretty-options)))
-
-  (setq hy-pretty-pairs
-        (get-pretty-pairs
-         '(:lambda "fn" :def "defn"
-                   :composition "comp"
-                   :null "None" :true "True" :false "False"
-                   :in "in" :not "not"
-                   :tuple "#t"
-                   :pipe "ap-pipe"
-                   ))
-
-        python-pretty-pairs
-        (append
-         (get-pretty-pairs
-          '(:lambda "lambda" :def "def"
-                    :null "None" :true "True" :false "False"
-                    :int "int" :float "float" :str "str" :bool "bool"
-                    :not "not" :for "for" :in "in" :not-in "not in"
-                    :return "return" :yield "yield"
-                    :tuple "Tuple"
-                    :pipe "tz-pipe"
-                    ))
-         (prettify-utils-generate
-          ;; Mypy Stuff
-          ("Dict"     "𝔇") ("List"     "ℒ")
-          ("Callable" "ℱ") ("Mapping"  "ℳ") ("Iterable" "𝔗")
-          ("Union"    "⋃") ("Any"      "❔")))
-        )
-
-  (defun set-pretty-pairs (HOOK-PAIRS-ALIST)
-    "Utility to set pretty pairs for many modes.
-MODE-HOOK-PAIRS-ALIST is an alist of the mode hoook and its pretty pairs."
-    (mapc (lambda (x)
-            (lexical-let ((pretty-pairs (cadr x)))
-              (add-hook (car x)
-                        (lambda ()
-                          (setq prettify-symbols-alist pretty-pairs)))))
-          HOOK-PAIRS-ALIST))
-
-  (set-pretty-pairs `((hy-mode-hook     ,hy-pretty-pairs)
-                      (python-mode-hook ,python-pretty-pairs)))
-
-  (global-prettify-symbols-mode 1)
-  (global-pretty-mode t)
-
-  ;; Activate pretty groups
-  (pretty-activate-groups
-   '(:arithmetic-nary :greek))
-
-  ;; Deactivate pretty groups conflicting with Fira Code ligatures
-  (pretty-deactivate-groups  ; Replaced by Fira Code
-   '(:equality :ordering :ordering-double :ordering-triple
-               :arrows :arrows-twoheaded :punctuation
-               :logic :sets :sub-and-superscripts)))
-;;;; Lisp-state
-
-(defun module/misc/lisp-state ()
-  "Add lisp state shortcut to Clojure and Hy."
-
-  (spacemacs/set-leader-keys-for-major-mode
-    'clojure-mode (kbd ",") 'lisp-state-toggle-lisp-state)
-  (spacemacs/set-leader-keys-for-major-mode
-    'hy-mode (kbd ",") 'lisp-state-toggle-lisp-state))
-
-;;;; Macros
-
-(defun module/misc/macros ()
-  "Evil Q shortcut for vim macros set at @q."
-
-  (evil-global-set-key 'normal (kbd "Q")
-                       (lambda () (interactive) (evil-execute-macro 1 "@q"))))
-
-;;;; Neotree
-(defun module/misc/neotree ()
-  "Neotree configuration."
-
-  (setq neo-theme 'icons
-        neo-window-width 28)
-
-  (setq neo-hidden-regexp-list '("^\\." "\\.pyc$" "~$" "^#.*#$" "\\.elc$"
-                                 ;; Pycache and init rarely want to see
-                                 "__pycache__" "__init__\\.py"))
-
-  (evil-global-set-key 'normal (kbd "M-f") 'winum-select-window-0)
-  (evil-global-set-key 'normal (kbd "M-p") 'neotree-find-project-root))
-
-;;;; Projectile
-
-(defun module/misc/projectile ()
-  "Project config, respect .projectile files."
-
-  (setq projectile-indexing-method 'native))
-
 ;;;; Shell
 
 (defun module/misc/shell ()
@@ -1030,7 +811,7 @@ MODE-HOOK-PAIRS-ALIST is an alist of the mode hoook and its pretty pairs."
   (setenv "PYTHONIOENCODING" "utf-8")
   (setenv "LANG" "en_US.UTF-8"))
 
-(defun jsg/configure-eshell ()
+(defun module/configure-eshell ()
   "Eshell prettification."
 
   (setq eshell-prompt-number 0)
@@ -1092,7 +873,7 @@ MODE-HOOK-PAIRS-ALIST is an alist of the mode hoook and its pretty pairs."
 
   (setq eshell-prompt-function 'esh-prompt-function))
 
-(defun jsg/configure-navi-mode ()
+(defun module/configure-navi-mode ()
   "Navi mode bar vim bindings and improvements."
 
   (require 'navi-mode)
@@ -1171,7 +952,7 @@ MODE-HOOK-PAIRS-ALIST is an alist of the mode hoook and its pretty pairs."
 
 ;;;; Outshine-mode
 
-(defun jsg/configure-outshine ()
+(defun module/configure-outshine ()
   "Outline/Outshine mode bindings and Navi integration."
 
   (require 'outshine)
@@ -1246,34 +1027,6 @@ MODE-HOOK-PAIRS-ALIST is an alist of the mode hoook and its pretty pairs."
   ;; Enables outline-minor-mode for *ALL* programming buffers!
   (add-hook 'prog-mode-hook 'outline-minor-mode))
 
-;;;; File-links
-
-(defun module/navigation/file-links ()
-  "Quick binding for opening org-formatted links anywhere."
-
-  (spacemacs/set-leader-keys (kbd "aof") 'org-open-at-point-global))
-
-;;;; Searching
-(defun module/navigation/searching ()
-  "Evil searching scrolls to center of match."
-
-  (advice-add 'evil-ex-search-next :after
-              (lambda (&rest x) (evil-scroll-line-to-center (line-number-at-pos))))
-  (advice-add 'evil-ex-search-previous :after
-              (lambda (&rest x) (evil-scroll-line-to-center (line-number-at-pos)))))
-
-
-
-;;;; Linux-file-apps
-
-(defun module/org/linux-file-apps ()
-  "Modify default file apps for Linux."
-
-  (setq org-file-apps '((auto-mode . emacs)
-                        ("\\.mm\\'" . default)
-                        ("\\.x?html?\\'" . "/usr/bin/firefox %s")
-                        ("\\.pdf\\'" . default))))
-
 ;;;; Babel
 
 (defun module/org/babel ()
@@ -1288,47 +1041,117 @@ MODE-HOOK-PAIRS-ALIST is an alist of the mode hoook and its pretty pairs."
    'org-babel-load-languages '((python .  t)
                                (haskell . t)
                                (clojure . t)
+                               (restclient . t)
                                (dot .     t)  ; Graphviz
                                (http .    t)  ; Requests
                                )))
 
-;;;; Exports
+(defun module/org/mobile ()
 
-(defun module/org/exports ()
-  "Org exporting setup."
+(quote
+ (
+ '(org-mobile-directory "~/Dropbox/Apps/MobileOrg")
+ '(org-mobile-files (quote ("~/Notes/org/todo.org")))
+ ;;'(org-mobile-files-exclude-regexp "\\(TODO\\(-.*\\)?\\)\\'")
+ '(org-mobile-inbox-for-pull "~/Notes/org/from-mobile.org")))
 
-  (with-eval-after-load 'ox-bibtex  ; This eval might not be needed
-    (add-to-list 'org-latex-packages-alist '("" "minted"))
-    (setq
-     org-latex-listings 'minted
-     org-latex-minted-options
-     '(("frame" "lines")
-       ("fontsize" "\\scriptsize")
-       ("xleftmargin" "\\parindent")
-       ("linenos" ""))
-     org-latex-pdf-process
-     '("pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
-       "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
-       "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
-       ))))
+(defun save-org-mode-files ()
+  (dolist (buf (buffer-list))
+    (with-current-buffer buf
+      (when (eq major-mode 'org-mode)
+        (if (and (buffer-modified-p) (buffer-file-name))
+            (save-buffer))))))
 
-;;;; Gcal
+(run-with-idle-timer 25 t 'save-org-mode-files)
 
-(defun module/org/gcal ()
-  "Org google calendar integration. Not actively using atm."
+(defun my-org-push-mobile ()
+  (interactive)
+  (with-current-buffer (find-file-noselect "~/Notes/org/todo.org")
+    (org-mobile-push)))
 
-  ;; TODO setup dropbox daemon on linux, try calfw, bind stuff
-  (require 'org-gcal)
-  (require 'org-contacts)
-  (load (if-linux "~/Dropbox/secrets.el"
-                  "c:/~/Dropbox/secrets.el") t)
-  (setq org-gcal-file-alist
-        `(("jgraham20@gmail.com" .
-           ,(if-linux "~/Dropbox/schedule.org" "c:/~/Dropbox/schedule.org"))))
-  (setq org-contacts-files
-        `(,(if-linux "~/Dropbox/contacts.org" "c:/~/Dropbox/contacts.org")))
-  (setq org-agenda-files
-        `(,(if-linux "~/Dropbox/schedule.org" "c:/~/Dropbox/schedule.org"))))
+(eval-when-compile
+  (defvar org-clock-current-task)
+  (defvar org-mobile-directory)
+  (defvar org-mobile-capture-file))
+
+(defun quickping (host)
+  (= 0 (call-process "ping" nil nil nil "-c1" "-W50" "-q" host)))
+
+(defun org-my-auto-exclude-function (tag)
+  (and (cond
+        ((string= tag "call")
+         (let ((hour (nth 2 (decode-time))))
+           (or (< hour 8) (> hour 21))))
+        ((string= tag "errand")
+         (let ((hour (nth 2 (decode-time))))
+           (or (< hour 12) (> hour 17))))
+        ((or (string= tag "home") (string= tag "nasim"))
+         (with-temp-buffer
+           (call-process "ifconfig" nil t nil "en0" "inet")
+           (call-process "ifconfig" nil t nil "en1" "inet")
+           (call-process "ifconfig" nil t nil "bond0" "inet")
+           (goto-char (point-min))
+           (not (re-search-forward "inet 192\\.168\\.9\\." nil t))))
+        ((string= tag "net")
+         (not (quickping "imap.gmail.com")))
+        ((string= tag "fun")
+         org-clock-current-task))
+       (concat "-" tag)))
+
+(defun my-mobileorg-convert ()
+  (interactive)
+  (while (re-search-forward "^\\* " nil t)
+    (goto-char (match-beginning 0))
+    (insert ?*)
+    (forward-char 2)
+    (insert "TODO ")
+    (goto-char (line-beginning-position))
+    (forward-line)
+    (re-search-forward "^\\[")
+    (goto-char (match-beginning 0))
+    (let ((uuid
+           (save-excursion
+             (re-search-forward "^\\*\\* Note ID: \\(.+\\)")
+             (prog1
+                 (match-string 1)
+               (delete-region (match-beginning 0)
+                              (match-end 0))))))
+      (insert (format "SCHEDULED: %s\n:PROPERTIES:\n"
+                      (format-time-string (org-time-stamp-format))))
+      (insert (format ":ID:       %s\n:CREATED:  " uuid)))
+    (forward-line)
+    (insert ":END:")))
+
+(defun my-org-convert-incoming-items ()
+  (interactive)
+  (with-current-buffer
+      (find-file-noselect (expand-file-name org-mobile-capture-file
+                                            org-mobile-directory))
+    (goto-char (point-min))
+    (unless (eobp)
+      (my-mobileorg-convert)
+      (goto-char (point-max))
+      (if (bolp)
+          (delete-char -1))
+      (let ((tasks (buffer-string)))
+        (set-buffer-modified-p nil)
+        (kill-buffer (current-buffer))
+        (with-current-buffer (find-file-noselect "~/Notes/org/todo.org")
+          (save-excursion
+            (goto-char (point-min))
+            (re-search-forward "^\\* Inbox$")
+            (re-search-forward "^:END:")
+            (forward-line)
+            (goto-char (line-beginning-position))
+            (if (and tasks (> (length tasks) 0))
+                (insert tasks ?\n))))))))
+
+(defun my-org-mobile-pre-pull-function ()
+  (my-org-convert-incoming-items))
+
+(add-hook 'org-mobile-pre-pull-hook 'my-org-mobile-pre-pull-function)
+
+)
 
 ;;;; Misc
 
@@ -1387,190 +1210,303 @@ MODE-HOOK-PAIRS-ALIST is an alist of the mode hoook and its pretty pairs."
          '("clps" ":PROPERTIES:\n :HTML_CONTAINER_CLASS: hsCollapsed\n :END:\n")
          )))
 
-;;;; Theming
+(defun module/org/org-projects()
 
-(defun module/org/theming ()
-  "Org theming updates."
-
-  (setq org-bullets-bullet-list '("■" "○" "✸" "✿")
-        org-priority-faces '((65 :inherit org-priority :foreground "red")
-                             (66 :inherit org-priority :foreground "yellow")
-                             (67 :inherit org-priority :foreground "blue"))
-        org-ellipsis "▼"))
-(defun module/display/theme-updates ()
-  "Face configuration for themes, atm solarized-light."
-
-  (setq my-black "#1b1b1e")
-
-  (custom-theme-set-faces
-   'solarized-light
-
-   ;; Makes matching parens obvious
-   `(sp-show-pair-match-face ((t (:inherit sp-show-pair-match-face
-                                           :background "light gray"))))
-
-   ;; active modeline has no colors
-   `(mode-line ((t (:inherit mode-line :background "#fdf6e3"))))
-   `(mode-line-inactive ((t (:inherit mode-line :background "#fdf6e3"))))
-   `(spaceline-highlight-face ((t (:inherit mode-line :background "#fdf6e3"))))
-   `(powerline-active1 ((t (:inherit mode-line :background "#fdf6e3"))))
-   `(powerline-active2 ((t (:inherit mode-line :background "#fdf6e3"))))
-
-   ;; Inactive modeline has tint
-   `(powerline-inactive2 ((t (:inherit powerline-inactive1))))
-
-   ;; Org and outline header updates
-   `(org-level-1 ((t (:height 1.25 :foreground ,my-black
-                              :background "#C9DAEA"
-                              :weight bold))))
-   `(org-level-2 ((t (:height 1.15 :foreground ,my-black
-                              :background "#7CDF64"
-                              :weight bold))))
-   `(org-level-3 ((t (:height 1.05 :foreground ,my-black
-                              :background "#F8DE7E"
-                              :weight bold))))
-
-   '(outline-1 ((t (:inherit org-level-1))))
-   '(outline-2 ((t (:inherit org-level-2))))
-   '(outline-3 ((t (:inherit org-level-3))))
-   '(outline-4 ((t (:inherit org-level-4))))
-
-   `(org-todo ((t (:foreground ,my-black :weight extra-bold
-                               :background "light gray"))))
-   `(org-priority ((t (:foreground ,my-black :weight bold
-                                   :background "light gray"))))
-   ))
-
-;;; Ivy
-
-(defun module/ivy ()
-  "Ivy completion framework configuration."
-
-  (defun ivy-file-transformer-fixed-for-files (s)
-    "Gets file icon for string, fixing bug for folders and windows box."
-    (format "%s\t%s"
-            (if (and is-linuxp (s-ends-with? "/" s))
-                (propertize "\t" 'display "" 'face 'all-the-icons-silver)
-              (propertize "\t" 'display (all-the-icons-icon-for-file s)))
-            s))
-
-  (advice-add 'all-the-icons-ivy-file-transformer
-              :override 'ivy-file-transformer-fixed-for-files)
-
-  (all-the-icons-ivy-setup)
-
-  ;; Perform default action on avy-selected minibuffer line
-  (define-key ivy-minibuffer-map (kbd "C-l") 'ivy-avy)
-  ;; Evil-like scrolling of ivy minibuffer
-  (define-key ivy-minibuffer-map (kbd "C-u") 'ivy-scroll-down-command)
-  (define-key ivy-minibuffer-map (kbd "C-d") 'ivy-scroll-up-command)
-
-  ;; Rebind C-n/C-y/C-p to narrow/yank from buffer/paste into buffer
-  (define-key ivy-minibuffer-map (kbd "C-n") 'ivy-restrict-to-matches)
-  (define-key ivy-minibuffer-map (kbd "C-y") 'ivy-yank-word)
-  ;; Read-only buffer of candidates with shortcuts to dispatches
-  (define-key ivy-minibuffer-map (kbd "C-o") 'ivy-occur)
-
-  ;; Non-exiting default action
-  (define-key ivy-minibuffer-map (kbd "C-<return>") 'ivy-call)
-  ;; Dispatch actions
-  (define-key ivy-minibuffer-map (kbd "C-SPC") 'ivy-dispatching-done)
-  (define-key ivy-minibuffer-map (kbd "C-S-SPC") 'ivy-dispatching-call)
-
-  ;; Resume last ivy session
-  (spacemacs/set-leader-keys (kbd "ai") 'ivy-resume)
-
-  (setq ivy-format-function 'ivy-format-function-arrow
-        ivy-height 20
-        completion-in-region-function 'ivy-completion-in-region))
-
-
-
-;;;; Editing
-
-(defun module/configuration/editing ()
-  "Editing toggles."
-
-  (hungry-delete-mode 1)                                ; cut contiguous space
-  (spacemacs/toggle-aggressive-indent-globally-on)      ; auto-indentation
-  (add-hook 'org-mode-hook (lambda () (auto-fill-mode 1))))  ; SPC splits past 80
-
-;;;; Evil
-
-(defun module/configuration/evil ()
-  "Update evil settings."
-
-  (setq-default evil-escape-key-sequence "jk"
-                evil-escape-unordered-key-sequence "true"))
-
-;;;; Visual
-
-(defun module/configuration/visual ()
-  "Visual toggles."
-
-  (spacemacs/toggle-highlight-long-lines-globally-on)
-  (fringe-mode '(1 . 1))                         ; Minimal left padding
-  (rainbow-delimiters-mode-enable)               ; Paren color based on depth
-  (global-highlight-parentheses-mode 1)          ; Highlight containing parens
-  (spacemacs/toggle-mode-line-minor-modes-off))  ; no uni symbs next to major
-
-
-
-;;;; Avy
-
-(defun module/navigation/avy ()
-  "Avy keybindings and custom motions."
-
-  (require 'avy)  ; TODO must require for to get avy--generic-jump loaded
-
-  (global-set-key (kbd "C-h") 'avy-pop-mark)
-  (global-set-key (kbd "C-j") 'evil-avy-goto-char-2)
-  (global-set-key (kbd "C-k") 'evil-avy-goto-word-or-subword-1)
-  (global-set-key (kbd "C-l") 'evil-avy-goto-line)
-
-  ;; TODO this motion should be major-mode specific and handle navi altogether
-  (defun avy-navi-goto-outline ()
+  (defun my/org-show-active-projects ()
+    "Show my current projects."
     (interactive)
-    (avy--generic-jump "[;]+\\( \\)" nil 'post))  ; must be post
+    (org-tags-view nil "project-inactive-someday"))
 
-  (defun avy-navi-goto-comment ()
-    (interactive)
-    (avy--generic-jump comment-start-skip nil 'pre))
+  (defun my/org-agenda-project-agenda ()
+    "Return the project headline and up to `my/org-agenda-limit-items' tasks."
+    (save-excursion
+      (let* ((marker (org-agenda-new-marker))
+             (heading
+              (org-agenda-format-item "" (org-get-heading) (org-get-category) nil))
+             (org-agenda-restrict t)
+             (org-agenda-restrict-begin (point))
+             (org-agenda-restrict-end (org-end-of-subtree 'invisible))
+             ;; Find the TODO items in this subtree
+             (list (org-agenda-get-day-entries (buffer-file-name) (calendar-current-date) :todo)))
+        (org-add-props heading
+            (list 'face 'defaults
+                  'done-face 'org-agenda-done
+                  'undone-face 'default
+                  'mouse-face 'highlight
+                  'org-not-done-regexp org-not-done-regexp
+                  'org-todo-regexp org-todo-regexp
+                  'org-complex-heading-regexp org-complex-heading-regexp
+                  'help-echo
+                  (format "mouse-2 or RET jump to org file %s"
+                          (abbreviate-file-name
+                           (or (buffer-file-name (buffer-base-buffer))
+                               (buffer-name (buffer-base-buffer))))))
+          'org-marker marker
+          'org-hd-marker marker
+          'org-category (org-get-category)
+          'type "tagsmatch")
+        (concat heading "\n"
+                (org-agenda-finalize-entries list)))))
 
-  (global-set-key (kbd "C-;") 'avy-navi-goto-outline)
-  ;; TODO probably better way to do multi evil global set
-  (evil-global-set-key 'normal (kbd "C-o") 'avy-navi-goto-outline)
-  (evil-global-set-key 'visual (kbd "C-o") 'avy-navi-goto-outline)
-  (evil-global-set-key 'replace (kbd "C-o") 'avy-navi-goto-outline)
-  (evil-global-set-key 'operator (kbd "C-o") 'avy-navi-goto-outline)
-  (evil-global-set-key 'motion (kbd "C-o") 'avy-navi-goto-outline)
-  (evil-global-set-key 'emacs (kbd "C-o") 'avy-navi-goto-outline)
+  (defun my/org-agenda-projects-and-tasks (match)
+    "Show TODOs for all `org-agenda-files' headlines matching MATCH."
+    (interactive "MString: ")
+    (let ((todo-only nil))
+      (if org-agenda-overriding-arguments
+          (setq todo-only (car org-agenda-overriding-arguments)
+                match (nth 1 org-agenda-overriding-arguments)))
+      (let* ((org-tags-match-list-sublevels
+              org-tags-match-list-sublevels)
+             (completion-ignore-case t)
+             rtn rtnall files file pos matcher
+             buffer)
+        (when (and (stringp match) (not (string-match "\\S-" match)))
+          (setq match nil))
+        (when match
+          (setq matcher (org-make-tags-matcher match)
+                match (car matcher) matcher (cdr matcher)))
+        (catch 'exit
+          (if org-agenda-sticky
+              (setq org-agenda-buffer-name
+                    (if (stringp match)
+                        (format "*Org Agenda(%s:%s)*"
+                                (or org-keys (or (and todo-only "M") "m")) match)
+                      (format "*Org Agenda(%s)*" (or (and todo-only "M") "m")))))
+          (org-agenda-prepare (concat "TAGS " match))
+          (org-compile-prefix-format 'tags)
+          (org-set-sorting-strategy 'tags)
+          (setq org-agenda-query-string match)
+          (setq org-agenda-redo-command
+                (list 'org-tags-view `(quote ,todo-only)
+                      (list 'if 'current-prefix-arg nil `(quote ,org-agenda-query-string))))
+          (setq files (org-agenda-files nil 'ifmode)
+                rtnall nil)
+          (while (setq file (pop files))
+            (catch 'nextfile
+              (org-check-agenda-file file)
+              (setq buffer (if (file-exists-p file)
+                               (org-get-agenda-file-buffer file)
+                             (error "No such file %s" file)))
+              (if (not buffer)
+                  ;; If file does not exist, error message to agenda
+                  (setq rtn (list
+                             (format "ORG-AGENDA-ERROR: No such org-file %s" file))
+                        rtnall (append rtnall rtn))
+                (with-current-buffer buffer
+                  (unless (derived-mode-p 'org-mode)
+                    (error "Agenda file %s is not in `org-mode'" file))
+                  (save-excursion
+                    (save-restriction
+                      (if org-agenda-restrict
+                          (narrow-to-region org-agenda-restrict-begin
+                                            org-agenda-restrict-end)
+                        (widen))
+                      (setq rtn (org-scan-tags 'my/org-agenda-project-agenda matcher todo-only))
+                      (setq rtnall (append rtnall rtn))))))))
+          (if org-agenda-overriding-header
+              (insert (org-add-props (copy-sequence org-agenda-overriding-header)
+                          nil 'face 'org-agenda-structure) "\n")
+            (insert "Headlines with TAGS match: ")
+            (add-text-properties (point-min) (1- (point))
+                                 (list 'face 'org-agenda-structure
+                                       'short-heading
+                                       (concat "Match: " match)))
+            (setq pos (point))
+            (insert match "\n")
+            (add-text-properties pos (1- (point)) (list 'face 'org-warning))
+            (setq pos (point))
+            (unless org-agenda-multi
+              (insert "Press `C-u r' to search again with new search string\n"))
+            (add-text-properties pos (1- (point)) (list 'face 'org-agenda-structure)))
+          (org-agenda-mark-header-line (point-min))
+          (when rtnall
+            (insert (mapconcat 'identity rtnall "\n") ""))
+          (goto-char (point-min))
+          (or org-agenda-multi (org-agenda-fit-window-to-buffer))
+          (add-text-properties (point-min) (point-max)
+                               `(org-agenda-type tags
+                                                 org-last-args (,todo-only ,match)
+                                                 org-redo-cmd ,org-agenda-redo-command
+                                                 org-series-cmd ,org-cmd))
+          (org-agenda-finalize)
+          (setq buffer-read-only t)))))
 
-  (with-eval-after-load 'flyspell
-    (evil-define-key '(normal insert visual replace operator motion emacs)
-      flyspell-mode-map (kbd "C-;") 'avy-navi-goto-comment))
+  )
 
-  (with-eval-after-load 'org
-    (evil-define-key '(normal insert visual replace operator motion emacs)
-      org-mode-map (kbd "C-j") 'evil-avy-goto-char-2)
-    (evil-define-key '(normal insert visual replace operator motion emacs)
-      org-mode-map (kbd "C-k") 'evil-avy-goto-word-or-subword-1))
+;; Weekly Reviews
+(defun module/org/weekly-review ()
 
-  (with-eval-after-load 'python
-    (evil-define-key '(normal insert visual replace operator motion emacs)
-      python-mode-map (kbd "C-j") 'evil-avy-goto-char-2)))
+  (defvar my/weekly-review-line-regexp
+    "^  \\([^:]+\\): +\\(Sched[^:]+: +\\)?TODO \\(.*?\\)\\(?:[      ]+\\(:[[:alnum:]_@#%:]+:\\)\\)?[        ]*$"
+    "Regular expression matching lines to include.")
+  (defvar my/weekly-done-line-regexp
+    "^  \\([^:]+\\): +.*?\\(?:Clocked\\|Closed\\):.*?\\(TODO\\|DONE\\) \\(.*?\\)\\(?:[       ]+\\(:[[:alnum:]_@#%:]+:\\)\\)?[        ]*$"
+    "Regular expression matching lines to include as completed tasks.")
 
-;;;; Spotify
+  (defun my/quantified-get-hours (category time-summary)
+    "Return the number of hours based on the time summary."
+    (if (stringp category)
+        (if (assoc category time-summary) (/ (cdr (assoc category time-summary)) 3600.0) 0)
+      (apply '+ (mapcar (lambda (x) (my/quantified-get-hours x time-summary)) category))))
 
-(defun module/misc/spotify ()
-  "Spotify-plus bindings."
+  (defun _my/extract-tasks-from-agenda (string matchers prefix line-re)
+    (with-temp-buffer
+      (insert string)
+      (goto-char (point-min))
+      (while (re-search-forward line-re nil t)
+        (let ((temp-list matchers))
+          (while temp-list
+            (if (save-match-data
+                  (string-match (car (car temp-list)) (match-string 1)))
+                (progn
+                  (add-to-list (cdr (car temp-list)) (concat prefix (match-string 3)) t)
+                  (setq temp-list nil)))
+            (setq temp-list (cdr temp-list)))))))
 
-  ;; TODO must overwrite navi mode for M-s s
-  (global-set-key (kbd "M-s s") 'helm-spotify-plus)
-  (global-set-key (kbd "M-s j") 'helm-spotify-plus-play)
-  (global-set-key (kbd "M-s SPC") 'helm-spotify-plus-pause)
-  (global-set-key (kbd "M-s l") 'helm-spotify-plus-next)
-  (global-set-key (kbd "M-s h") 'helm-spotify-plus-previous))
+  (ert-deftest _my/extract-tasks-from-agenda ()
+    (let (list-a list-b (line-re "\\([^:]+\\):\\( \\)\\(.*\\)"))
+      (_my/extract-tasks-from-agenda
+       "listA: Task 1\nother: Task 2\nlistA: Task 3"
+       '(("listA" . list-a)
+         ("." . list-b))
+       "- [ ] "
+       line-re)
+      (should (equal list-a '("- [ ] Task 1" "- [ ] Task 3")))
+      (should (equal list-b '("- [ ] Task 2")))))
+
+  (defun _my/get-upcoming-tasks ()
+    (save-window-excursion
+        (org-agenda nil "W")
+        (_my/extract-tasks-from-agenda (buffer-string)
+                                          '(("routines" . ignore)
+                                            ("business" . business-next)
+                                            ("people" . relationships-next)
+                                            ("tasks" . emacs-next)
+                                            ("." . life-next))
+                                          "  - [ ] "
+                                          my/weekly-review-line-regexp)))
+  (defun _my/get-previous-tasks ()
+    (let (string)
+      (save-window-excursion
+        (org-agenda nil "W")
+        (org-agenda-later -1)
+        (org-agenda-log-mode 16)
+        (setq string (buffer-string))
+        ;; Get any completed tasks from the current week as well
+        (org-agenda-later 1)
+        (org-agenda-log-mode 16)
+        (setq string (concat string "\n" (buffer-string)))
+        (_my/extract-tasks-from-agenda string
+                                          '(("routines" . ignore)
+                                            ("business" . business)
+                                            ("people" . relationships)
+                                            ("tasks" . emacs)
+                                            ("." . life))
+                                          "  - [X] "
+                                          my/weekly-done-line-regexp))))
+
+  (defun my/org-summarize-focus-areas (date)
+    "Summarize previous and upcoming tasks as a list."
+    (interactive (list (org-read-date-analyze (if current-prefix-arg (org-read-date) "-fri") nil '(0 0 0))))
+    (let (business relationships life business-next relationships-next life-next string emacs emacs-next
+                   start end time-summary biz-time ignore base-date)
+      (setq base-date (apply 'encode-time date))
+      (setq start (format-time-string "%Y-%m-%d" (days-to-time (- (time-to-number-of-days base-date) 6))))
+      (setq end (format-time-string "%Y-%m-%d" (days-to-time (1+ (time-to-number-of-days base-date)))))
+      (setq time-summary (quantified-summarize-time start end))
+      (setq biz-time (my/quantified-get-hours "Business" time-summary))
+      (_my/get-upcoming-tasks)
+      (_my/get-previous-tasks)
+      (setq string
+            (concat
+             (format "- *Business* (%.1fh - %d%%)\n" biz-time (/ biz-time 1.68))
+             (mapconcat 'identity business "\n") "\n"
+             (mapconcat 'identity business-next "\n")
+             "\n"
+             (format "  - *Earn* (%.1fh - %d%% of Business)\n"
+                     (my/quantified-get-hours "Business - Earn" time-summary)
+                     (/ (my/quantified-get-hours "Business - Earn" time-summary) (* 0.01 biz-time)))
+             (format "  - *Build* (%.1fh - %d%% of Business)\n"
+                     (my/quantified-get-hours "Business - Build" time-summary)
+                     (/ (my/quantified-get-hours "Business - Build" time-summary) (* 0.01 biz-time)))
+             (format "  - *Connect* (%.1fh - %d%% of Business)\n"
+                     (my/quantified-get-hours "Business - Connect" time-summary)
+                     (/ (my/quantified-get-hours "Business - Connect" time-summary) (* 0.01 biz-time)))
+             (format "- *Relationships* (%.1fh - %d%%)\n"
+                     (my/quantified-get-hours '("Discretionary - Social"
+                                                   "Discretionary - Family") time-summary)
+                     (/ (my/quantified-get-hours '("Discretionary - Social"
+                                                      "Discretionary - Family") time-summary) 1.68))
+             (mapconcat 'identity relationships "\n") "\n"
+             (mapconcat 'identity relationships-next "\n") "\n"
+             "\n"
+             (format "- *Discretionary - Productive* (%.1fh - %d%%)\n"
+                     (my/quantified-get-hours "Discretionary - Productive" time-summary)
+                     (/ (my/quantified-get-hours "Discretionary - Productive" time-summary) 1.68))
+             (format "  - *Drawing* (%.1fh)\n"
+                     (my/quantified-get-hours '("Discretionary - Productive - Drawing")  time-summary))
+             (format "  - *Emacs* (%.1fh)\n"
+                     (my/quantified-get-hours "Discretionary - Productive - Emacs" time-summary))
+             (mapconcat 'identity emacs "\n") "\n"
+             (mapconcat 'identity emacs-next "\n") "\n"
+             (format "  - *Coding* (%.1fh)\n"
+                     (my/quantified-get-hours "Discretionary - Productive - Coding" time-summary))
+             (mapconcat 'identity life "\n") "\n"
+             (mapconcat 'identity life-next "\n") "\n"
+             (format "  - *Sewing* (%.1fh)\n"
+                     (my/quantified-get-hours "Discretionary - Productive - Sewing" time-summary))
+             (format "  - *Writing* (%.1fh)\n"
+                     (my/quantified-get-hours "Discretionary - Productive - Writing" time-summary))
+             (format "- *Discretionary - Play* (%.1fh - %d%%)\n"
+                     (my/quantified-get-hours "Discretionary - Play" time-summary)
+                     (/ (my/quantified-get-hours "Discretionary - Play" time-summary) 1.68))
+             (format "- *Personal routines* (%.1fh - %d%%)\n"
+                     (my/quantified-get-hours "Personal" time-summary)
+                     (/ (my/quantified-get-hours "Personal" time-summary) 1.68))
+             (format "- *Unpaid work* (%.1fh - %d%%)\n"
+                     (my/quantified-get-hours "Unpaid work" time-summary)
+                     (/ (my/quantified-get-hours "Unpaid work" time-summary) 1.68))
+             (format "  - *Childcare* (%.1fh - %d%% of total)\n"
+                     (my/quantified-get-hours '("Unpaid work - Childcare") time-summary)
+                     (/ (my/quantified-get-hours '("Unpaid work - Childcare") time-summary) 1.68))
+             (format "- *Sleep* (%.1fh - %d%% - average of %.1f per day)\n"
+                     (my/quantified-get-hours "Sleep" time-summary)
+                     (/ (my/quantified-get-hours "Sleep" time-summary) 1.68)
+                     (/ (my/quantified-get-hours "Sleep" time-summary) 7)
+                     )))
+
+      (if (called-interactively-p 'any)
+          (insert string)
+        string)))
+
+      (defun my/org-add-line-item-task (task)
+        (interactive "MTask: ")
+        (org-insert-heading)
+        (insert "[ ] " task)
+        (let ((org-capture-entry '("t" "Tasks" entry
+                                   (file+headline "~/Notes/org/organizer.org" "Tasks")
+                                   "")))
+          (org-capture nil "t")
+          (insert "TODO " task "\nSCHEDULED: <" (org-read-date) ">")))
+;(define-key org-mode-map (kbd "C-c t") 'my/org-add-line-item-task)
+
+    (defun my/org-prepare-weekly-review (&optional date skip-urls)
+      "Prepare weekly review template."
+      (interactive (list (org-read-date-analyze (if current-prefix-arg (org-read-date) "-fri") nil '(0 0 0))))
+      (let ((base-date (apply 'encode-time date))
+            start end links)
+        (setq start (format-time-string "%Y-%m-%d" (days-to-time (- (time-to-number-of-days base-date) 6))))
+        (setq end (format-time-string "%Y-%m-%d" (days-to-time (1+ (time-to-number-of-days base-date)))))
+        (outline-next-heading)
+          (insert
+           "*** Weekly review: Week ending " (format-time-string "%B %e, %Y" base-date) "  :weekly:\n"
+           "*Blog posts*\n\n"
+           "*Sketches*\n\n"
+           (my/sketches-export-and-extract start end) "\n"
+           "\n\n*Focus areas and time review*\n\n"
+           (my/org-summarize-focus-areas date)
+           "\n")))
+  )
 
 ;;;; Aspell
 
@@ -1578,34 +1514,6 @@ MODE-HOOK-PAIRS-ALIST is an alist of the mode hoook and its pretty pairs."
   "Setup aspell."
 
   (setq ispell-program-name "aspell"))
-
-;;;; Windows
-
-(defun module/misc/windows ()
-  "Additional window management bindings."
-
-  (evil-define-key 'normal outline-minor-mode-map (kbd "C-M-i")  ; M-tab
-    'spacemacs/alternate-buffer)
-
-  (global-set-key (kbd "M-d") 'spacemacs/delete-window))
-
-;;;; Yassnippet
-
-(defun module/misc/yassnippet ()
-  "Yassnippet bindings and config."
-
-  (global-set-key (kbd "C-SPC") 'hippie-expand))
-
-;;;; Auto-completion
-
-(defun module/misc/auto-completion ()
-  "Autocompletion face modifications."
-
-  (custom-set-faces
-   '(company-tooltip-common
-     ((t (:inherit company-tooltip :weight bold :underline nil))))
-   '(company-tooltip-common-selection
-     ((t (:inherit company-tooltip-selection :weight bold :underline nil))))))
 
 (defun module/misc/gnus ()
   "GNUS setup and user details. Nothing significant atm."
@@ -1784,3 +1692,4 @@ MODE-HOOK-PAIRS-ALIST is an alist of the mode hoook and its pretty pairs."
   (spacemacs/set-leader-keys (kbd "ab") 'deploy-blog)
   (spacemacs/set-leader-keys (kbd "aa") 'start-blog-server)
   (spacemacs/set-leader-keys (kbd "ae") 'end-blog-server))
+
