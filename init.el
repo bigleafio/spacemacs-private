@@ -103,7 +103,7 @@ values."
                                       lispy
                                       outshine                 ; Required for navi-mode
                                       navi-mode                ; Navbar on buffer outlines
-                                      forecast
+                                      sunshine
                                       ;; Org
                                       org-vcard                ; Import/export google contacts
 
@@ -369,6 +369,9 @@ explicitly specified that a variable should be set before a package is loaded,
 you should place your code here."
 
   (setq custom-file "~/.emacs.d/private/.custom-settings.el")
+
+  (load "~/Dropbox/.secret/secret.el")
+
   ;;(setq inhibit-compacting-font-caches t)
   ;;(color-theme-sanityinc-solarized-light)
   ;; Customization
@@ -402,6 +405,8 @@ you should place your code here."
 
   (setq user-full-name "Jason Graham"
         user-mail-address "jgraham20@gmail.com")
+
+(setq sunshine-location "Bowling Green,KY")
 
   (if (memq window-system '(w32))
       (setq dotspacemacs-smooth-scrolling nil))
@@ -490,7 +495,7 @@ you should place your code here."
 
 (setq projectile-indexing-method 'native)
 
-(if (memq window-system '(w32)) 'module/display/windows-frame-size-fix)
+(if (memq window-system '(w32)) 'module/system/w32)
 
 (module/configure-magit)
 (module/configure-eshell)
@@ -500,6 +505,12 @@ you should place your code here."
 (module/configure-outshine)
 
 )
+
+(defun module/system/w32 ()
+  (module/display/windows-frame-size-fix)
+
+
+  )
 
 (defun module/org ()
   (with-eval-after-load 'org
@@ -1047,7 +1058,20 @@ Can explore icons by evaluating eg.: (all-the-icons-insert-icons-for 'material)
                                )))
 
 (defun module/org/mobile ()
-
+  ; (use-package org-mobile :disabled t
+  ; :init
+  ; (progn
+  ;   (autoload 'org-mobile-pull "org-mobile" nil t)
+  ;   (autoload 'org-mobile-push "org-mobile" nil t))
+  ; :config
+  ; (progn
+  ;   (setq org-mobile-directory "~/Dropbox/mobile")
+  ;   (setq org-mobile-inbox-for-pull "~/personal/mobileorg.org")
+  ;   (setq default-buffer-file-coding-system 'utf-8)
+  ;   (setq org-mobile-files '("/cygdrive/c/my/personal/organizer.org"
+  ;                            "/cygdrive/c/my/personal/business.org"
+  ;                            "/cygdrive/c/my/personal/books.org"))
+  ;   (setq org-mobile-agendas '("a"))))
 (quote
  (
  '(org-mobile-directory "~/Dropbox/Apps/MobileOrg")
@@ -1330,6 +1354,12 @@ Can explore icons by evaluating eg.: (all-the-icons-insert-icons-for 'material)
                                                  org-series-cmd ,org-cmd))
           (org-agenda-finalize)
           (setq buffer-read-only t)))))
+
+  )
+
+(defun module/org/mobile ()
+
+
 
   )
 
@@ -1693,3 +1723,23 @@ Can explore icons by evaluating eg.: (all-the-icons-insert-icons-for 'material)
   (spacemacs/set-leader-keys (kbd "aa") 'start-blog-server)
   (spacemacs/set-leader-keys (kbd "ae") 'end-blog-server))
 
+(defun dotspacemacs/emacs-custom-settings ()
+  "Emacs custom settings.
+This is an auto-generated function, do not modify its content directly, use
+Emacs customize menu instead.
+This function is called at the very end of Spacemacs initialization."
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(package-selected-packages
+   (quote
+    (sunshine yapfify xterm-color xkcd ws-butler winum which-key web-beautify volatile-highlights virtualenvwrapper vi-tilde-fringe uuidgen use-package unfill toc-org symon sublimity string-inflection spotify spaceline smeargle shell-pop sayid reveal-in-osx-finder restclient-helm restart-emacs ranger rainbow-mode rainbow-identifiers rainbow-delimiters pyvenv pytest pyenv-mode py-isort popwin pip-requirements persp-mode pcre2el pbcopy password-generator paradox osx-trash osx-dictionary orgit org-vcard org-sticky-header org-projectile org-present org-pomodoro org-gcal org-download org-bullets open-junk-file ob-restclient ob-http neotree navi-mode mwim multi-term move-text mmm-mode mic-paren markdown-toc magithub magit-gitflow magit-gh-pulls macrostep lorem-ipsum livid-mode live-py-mode lispy linum-relative link-hint launchctl json-mode js2-refactor js-doc intero info+ indent-guide ibuffer-projectile hy-mode hungry-delete htmlize hlint-refactor hl-todo hindent highlight-numbers highlight-indentation hide-comnt help-fns+ helm-themes helm-swoop helm-spotify helm-pydoc helm-purpose helm-projectile helm-mode-manager helm-make helm-hoogle helm-gitignore helm-flx helm-descbinds helm-company helm-c-yasnippet helm-ag haskell-snippets google-translate golden-ratio gnuplot github-search github-clone gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link git-gutter-fringe git-gutter-fringe+ gist gh-md fuzzy forecast flx-ido fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-snipe evil-search-highlight-persist evil-org evil-numbers evil-mc evil-matchit evil-magit evil-lisp-state evil-lion evil-indent-plus evil-iedit-state evil-exchange evil-escape evil-ediff evil-commentary evil-args evil-anzu eshell-z eshell-prompt-extras esh-help elisp-slime-nav editorconfig dumb-jump diff-hl deft dante cython-mode company-tern company-statistics company-restclient company-ghci company-ghc company-cabal company-anaconda column-enforce-mode color-theme-sanityinc-solarized color-identifiers-mode coffee-mode cmm-mode clojure-snippets clj-refactor clean-aindent-mode cider-eval-sexp-fu calfw browse-at-remote auto-yasnippet auto-highlight-symbol auto-compile aggressive-indent adaptive-wrap ace-link ace-jump-helm-line ac-ispell))))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
+)
