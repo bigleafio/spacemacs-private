@@ -4,14 +4,14 @@
 ;; It must be stored in your home directory.
 ;; Utilities for integrating Windows and Linux.
 
-(setq is-linuxp (eq system-type 'gnu/linux))
-(setq is-linuxp t)
-(defun if-linux (x y) (if is-linuxp x y))
-(defun if-linux-call (x y) (if is-linuxp (funcall x) (funcall y)))
-(defun when-linux (x) (when is-linuxp x))
-(defun when-linux-call (x) (when is-linuxp (funcall x)))
-(defun unless-linux (x) (unless is-linuxp x))
-(defun unless-linux-call (x) (unless is-linuxp (funcall x)))
+; (setq is-linuxp (eq system-type 'gnu/linux))
+; (setq is-linuxp t)
+; (defun if-linux (x y) (if is-linuxp x y))
+; (defun if-linux-call (x y) (if is-linuxp (funcall x) (funcall y)))
+; (defun when-linux (x) (when is-linuxp x))
+; (defun when-linux-call (x) (when is-linuxp (funcall x)))
+; (defun unless-linux (x) (unless is-linuxp x))
+; (defun unless-linux-call (x) (unless is-linuxp (funcall x)))
 
 (defun dotspacemacs/layers ()
   "Configuration Layers declaration.
@@ -63,6 +63,7 @@ values."
              python-test-runner 'pytest)
 
      gnus
+     mu4e
      emacs-lisp
      deft
      osx
@@ -100,13 +101,15 @@ values."
                                       org-plus-contrib
                                       org-gcal
                                       calfw
+                                      clipmon
                                       lispy
                                       outshine                 ; Required for navi-mode
                                       navi-mode                ; Navbar on buffer outlines
                                       sunshine
+
                                       ;; Org
                                       org-vcard                ; Import/export google contacts
-
+                                      undo-tree
                                       ;; Misc
                                       ;;helm-spotify-plus        ; Spotify improvements
                                       virtualenvwrapper        ; Python environment management
@@ -370,67 +373,27 @@ you should place your code here."
 
   (setq custom-file "~/.emacs.d/private/.custom-settings.el")
 
-  (load "~/Dropbox/.secret/secret.el")
+  (epa-file-enable)
+  (setq epa-file-encrypt-to '("jgraham20@gmail.com"))
 
-  ;;(setq inhibit-compacting-font-caches t)
-  ;;(color-theme-sanityinc-solarized-light)
-  ;; Customization
-  ;;;;
-
-  ;; Get color-theme-solarized working. It is specified as an additional package
-;; above. First we setup some theme modifications - we must do this *before*
-;; we load the theme. Note that the color-theme-solarized package appears in
-;; the list of themes as plain old 'solarized'.
-(setq theming-modifications
-      '((sanityinc-solarized-light
-         ;; Provide a sort of "on-off" modeline whereby the current buffer has a nice
-         ;; bright blue background, and all the others are in cream.
-         ;; TODO: Change to use variables here. However, got error:
-         ;; (Spacemacs) Error in dotspacemacs/user-config: Wrong type argument: stringp, pd-blue
-         (mode-line :foreground "#839496" :background "#eee8d5" :inverse-video nil)
-         (powerline-active1 :foreground "#839496" :background "#eee8d5" :inverse-video nil)
-         (powerline-active2 :foreground "#839496" :background "#eee8d5" :inverse-video nil)
-         (mode-line-inactive :foreground "#839496" :background "#eee8d5" :inverse-video nil)
-         (powerline-inactive1 :foreground "#839496" :background "#eee8d5" :inverse-video nil)
-         (powerline-inactive2 :foreground "#839496" :background "#eee8d5" :inverse-video nil)
-         ;; Make a really prominent helm selection line.
-         (helm-selection :foreground "white" :background "red" :inverse-video nil)
-         ;; See comment above about dotspacemacs-colorize-cursor-according-to-state.
-         (cursor :background "#b58900")
-       )))
-
-(set-terminal-parameter nil 'background-mode 'light)
-(set-frame-parameter nil 'background-mode 'light)
-(spacemacs/load-theme 'sanityinc-solarized-light)
+  (module/configure-theme)
 
   (setq user-full-name "Jason Graham"
         user-mail-address "jgraham20@gmail.com")
 
-(setq sunshine-location "Bowling Green,KY")
-
-  (if (memq window-system '(w32))
-      (setq dotspacemacs-smooth-scrolling nil))
+  (setq sunshine-location "Bowling Green,KY")
 
   ;; Add a directory to our load path so that when you `load` things
   ;; below, Emacs knows where to look for the corresponding file.
   (add-to-list 'load-path "~/.spacemacs.d/local/")
-  (add-to-list 'load-path "~/.secret/")
+  (add-to-list 'load-path "~/Dropbox/.secret/secret.el")
 
-  ;;(setq powerline-default-separator 'arrow)
-
-  ;;(load "secret.el")
-  (require 'sublimity)
-  (require 'sublimity-scroll)
-  ;; (require 'sublimity-map)
-  ;; (require 'sublimity-attractive)
-  (sublimity-mode 1)
+  (load "~/Dropbox/.secret/secret.el")
 
   ;; Sets up exec-path-from shell
   ;; https://github.com/purcell/exec-path-from-shell
   (when (memq window-system '(mac ns))
     (exec-path-from-shell-initialize))
-
-  ;;(jsg/configure-org-mode)
 
   ;; Key binding to use "hippie expand" for text autocompletion
   ;; http://www.emacswiki.org/emacs/HippieExpand
@@ -444,92 +407,66 @@ you should place your code here."
         try-complete-lisp-symbol-partially
         try-complete-lisp-symbol))
 
-  ;; Highlights matching parenthesis
-  (show-paren-mode 1)
-  (fancy-battery-mode)
-  ;; Highlight current line
-  (global-hl-line-mode 1)
-  ;; When you visit a file, point goes to the last place where it
-  ;; was when you previously visited the same file.
-	;; http://www.emacswiki.org/emacs/SavePlace
-	(require 'saveplace)
-	(setq-default save-place t)
-	;; keep track of saved places in ~/.emacs.d/places
-	(setq save-place-file (concat user-emacs-directory "places"))
-;; Emacs can automatically create backup files. This tells Emacs to
-;; put all backups in ~/.emacs.d/backups. More info:
-;; http://www.gnu.org/software/emacs/manual/html_node/elisp/Backup-Files.html
-(setq backup-directory-alist `(("." . ,(concat user-emacs-directory
-                                               "backups"))))
-(setq delete-old-versions -1)
-(setq version-control t)
-(setq vc-make-backup-files t)
-;;(setq auto-save-file-name-transforms '((".*" "~/.emacs.d/private/auto-save-list/" t)))
+  (run-with-idle-timer 300 t 'jump-to-org-agenda)
 
-(setq savehist-file "~/.emacs.d/private/savehist")
-(savehist-mode 1)
-(setq history-length t)
-(setq history-delete-duplicates t)
-(setq savehist-save-minibuffer-history 1)
-(setq savehist-additional-variables
-      '(kill-ring
-        search-ring
-        regexp-search-ring))
+  ;; yasnippet
+  ;; http://www.emacswiki.org/emacs/Yasnippet
+  (yas-global-mode 1)
 
-;; yasnippet
-;; http://www.emacswiki.org/emacs/Yasnippet
-(yas-global-mode 1)
+  ;; yay rainbows!
+  (add-hook 'prog-mode-hook #'rainbow-delimiters-mode)
+  (global-set-key (kbd "M-p") 'ace-window)
+  (define-key smartparens-mode-map (kbd "C-<right>") 'sp-forward-slurp-sexp)
+  (define-key smartparens-mode-map (kbd "C-<left>") 'sp-forward-barf-sexp)
+  (define-key smartparens-mode-map (kbd "C-M-<left>") 'sp-backward-slurp-sexp)
+  (define-key smartparens-mode-map (kbd "C-M-<right>") 'sp-backward-barf-sexp)
 
-;; yay rainbows!
-(add-hook 'prog-mode-hook #'rainbow-delimiters-mode)
-(global-set-key (kbd "M-p") 'ace-window)
-(define-key smartparens-mode-map (kbd "C-<right>") 'sp-forward-slurp-sexp)
-(define-key smartparens-mode-map (kbd "C-<left>") 'sp-forward-barf-sexp)
-(define-key smartparens-mode-map (kbd "C-M-<left>") 'sp-backward-slurp-sexp)
-(define-key smartparens-mode-map (kbd "C-M-<right>") 'sp-backward-barf-sexp)
+  (setq blink-matching-paren nil)
+  (paren-activate)
+  (setq paren-match-face 'mode-line)
+  (menu-bar-mode 1)
 
-(setq blink-matching-paren nil)
-(paren-activate)
-(setq paren-match-face 'mode-line)
-(menu-bar-mode 1)
+  (setq projectile-indexing-method 'native)
 
-(setq projectile-indexing-method 'native)
+  (if (memq window-system '(w32))
+    'module/system/w32)
 
-(if (memq window-system '(w32)) 'module/system/w32)
+  (module/misc/gnus)
+  (module/misc/mail)
+  (module/configure-magit)
+  (module/configure-eshell)
+  (module/org)
 
-(module/configure-magit)
-(module/configure-eshell)
-(module/org)
-
-(module/configure-navi-mode)
-(module/configure-outshine)
+  (module/configure-navi-mode)
+  (module/configure-outshine)
 
 )
 
+;;;; W32 Settings
 (defun module/system/w32 ()
   (module/display/windows-frame-size-fix)
-
-
+  (setq dotspacemacs-smooth-scrolling nil)
+  (clipmon-mode-start)
   )
+
+;;; Python
+(defun module/python ()
+  (require 'python)
+  (module/python/fixes)
+  (module/python/mypy)
+  (module/python/venvs))
 
 (defun module/org ()
   (with-eval-after-load 'org
 
     (setq org-modules '(
-      ;;org-bbdb
-        ;;              org-gnus
-        ;;              org-drill
-        ;;;;              org-info
-        ;;              org-jsinfo
                       org-habit
-         ;;             org-irc
                       org-mouse
                       org-protocol
                       org-annotate-file
                       org-eval
                       org-expiry
                       org-interactive-query
-      ;;                org-man
                       org-collector
                       org-panel
                       org-screen
@@ -579,9 +516,10 @@ you should place your code here."
   (if (memq window-system '(w32))
       (setq jsg/home-dir "C:/Users/jg186074")
       (setq jsg/home-dir (expand-file-name "~")))
-  (setq org-directory (concat jsg/home-dir "/notes/"))
-  (setq org-default-notes-file (concat org-directory "todo.org"))
-  (setq jsg/org-default-habits-file (concat org-directory "habits.org"))
+
+  (setq org-directory "~/Notes/org/")
+  (setq org-default-notes-file "~/Notes/org/organizer.org")
+  (setq jsg/org-default-habits-file "~/Notes/org/habits.org")
 
   ;; agenda
   (setq org-agenda-files (list org-directory))
@@ -605,205 +543,117 @@ you should place your code here."
                               ("CANCELLED" . ?c)
                               ("FLAGGED" . ??))))
 
-  ;; capture
-  (setq org-capture-templates
-        (quote (("w" "Add Work Task" entry
-      (file+headline "~/notes/org/todo.org" "Inbox")
-      "* TODO %? \n:SCHEDULED: %t \n:PROPERTIES:
-:CLIENT: \n:TICKET:
-:ID:       %(shell-command-to-string \"uuidgen\"):CREATED:  %U
-:END:" :prepend t)
-        	     ("t" "todo" entry (file org-default-notes-file)
-                 "* TODO %?\n%U\n%a
-:ID:       %(shell-command-to-string \"uuidgen\")
-:CREATED:  %U
-:END:" :prepend t)
-                ("m" "meeting" entry (file org-default-notes-file)
-"* MEETING with %? :MEETING:\n%U
-:ID:       %(shell-command-to-string \"uuidgen\")
-:CREATED:  %U \n:END:" :prepend t)
-                ("i" "idea" entry (file org-default-notes-file)
-                 "* %? :IDEA:\n%U\n%a
-:ID:       %(shell-command-to-string \"uuidgen\")
-:CREATED:  %U\n:END:" :prepend t)
-                ("n" "note" entry (file org-default-notes-file)
-                 "* %? :NOTE:\n%U\n%a
-:ID:       %(shell-command-to-string \"uuidgen\")
-:CREATED:  %U \n:END:" :prepend t)
-                ("h" "habit" entry (file jsg/org-default-notes-file)
-                 "* NEXT %?\n%U\n%a\nSCHEDULED: %(format-time-string \"%<<%Y-%m-%d %a .+1d/3d>>\")\n:PROPERTIES:\n:STYLE: habit\n:REPEAT_TO_STATE: NEXT\n
-:END:" :prepend t)
-     ("c" "Calendar" entry
-      (file+headline "~/notes/org/todo.org" "Inbox")
-      "* APPT %? \n:SCHEDULED: %t
-:PROPERTIES: \n:ID:       %(shell-command-to-string \"uuidgen\")
-:CREATED:  %U \n:END:" :prepend t)
-      ("J" "Journal entry with date" plain
-         (file+datetree+prompt "~/notes/org/journal.org")
-         "%K - %a\n%i\n%?\n"
-         :unnarrowed t))))
 
-  ;; refiling
-  (setq org-refile-targets (quote ((nil :maxlevel . 9)
-                                   (org-agenda-files :maxlevel . 9))))
+    ;; refiling
+    (setq org-refile-targets (quote ((nil :maxlevel . 9)
+                                     (org-agenda-files :maxlevel . 9))))
 
-  ;; pomodoro
-  (add-hook 'org-pomodoro-finished-hook (lambda()
-                                          (org-journal-new-entry nil)
-                                          ))
+    ;; pomodoro
+    (add-hook 'org-pomodoro-finished-hook (lambda()
+                                            (org-journal-new-entry nil)
+                                            ))
 
-  '(org-agenda-files
-   (quote
-    ("~/notes/org/todo.org" "~/notes/org/habits.org" "~/notes/org/inbox.org" "~/notes/org/church.org" "~/notes/org/journal.org" "~/notes/org/goals.org")))
+    '(org-agenda-files
+     (quote
+       ("~/Notes/org/todo.org"
+        "~/Notes/org/habits.org"
+        "~/Notes/org/inbox.org"
+        "~/Notes/org/church.org"
+        "~/Notes/org/journal.org"
+        "~/Notes/org/goals.org")))
 
-   (setq org-agenda-text-search-extra-files '(agenda-archives))
+    (setq org-agenda-text-search-extra-files '(agenda-archives))
 
-	(setq org-blank-before-new-entry (quote ((heading) (plain-list-item))))
+  	(setq org-blank-before-new-entry (quote ((heading) (plain-list-item))))
 
-	(setq org-enforce-todo-dependencies t)
+  	(setq org-enforce-todo-dependencies t)
 
-	(setq org-log-done (quote time))
+  	(setq org-log-done (quote time))
 
-	(setq org-log-redeadline (quote time))
+  	(setq org-log-redeadline (quote time))
 
-	(setq org-log-reschedule (quote time))
+  	(setq org-log-reschedule (quote time))
 
-	(org-babel-do-load-languages
-     'org-babel-load-languages
-     '((restclient . t)
-       (clojure . t)))
+    (load "org-mouse")
+    (require 'org-bullets)
+    (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
 
-      (load "org-mouse")
-      (require 'org-bullets)
-      (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
+    (setq org-html-checkbox-type 'unicode)
+    (setq org-html-checkbox-types
+      '((unicode (on . "<span class=\"task-done\">&#x2611;</span>")
+                 (off . "<span class=\"task-todo\">&#x2610;</span>")
+                 (trans . "<span class=\"task-in-progress\">[-]</span>"))))
 
-      (setq org-confirm-babel-evaluate nil)
+    ;; Agenda
+    (setq org-agenda-span 2)
+    (setq org-agenda-tags-column -100) ; take advantage of the screen width
+    (setq org-agenda-sticky nil)
+    (setq org-agenda-inhibit-startup t)
+    (setq org-agenda-use-tag-inheritance t)
+    (setq org-agenda-show-log t)
+    (setq org-agenda-skip-scheduled-if-done t)
+    (setq org-agenda-skip-deadline-if-done t)
+    (setq org-agenda-skip-deadline-prewarning-if-scheduled 'pre-scheduled)
+    (setq org-agenda-time-grid
+          '((daily today require-timed)
+           "----------------"
+           (800 1000 1200 1400 1600 1800)))
 
-      )
+    ;;Dependecies
+    (setq org-columns-default-format "%14SCHEDULED %Effort{:} %1PRIORITY %TODO %50ITEM %TAGS")
+    (setq org-enforce-todo-dependencies t)
+    (setq org-track-ordered-property-with-tag t)
+    (setq org-agenda-dim-blocked-tasks t)
+
+    ;;Refile
+    (setq org-reverse-note-order t)
+    (setq org-refile-use-outline-path nil)
+    (setq org-refile-allow-creating-parent-nodes 'confirm)
+    (setq org-refile-use-cache nil)
+    (setq org-refile-targets '((org-agenda-files . (:maxlevel . 3))))
+    (setq org-blank-before-new-entry nil)
+    )
 
 ;;;; Prettify-magit
+(defun module/configure-magit ())
 
-(defun module/configure-magit ()
-  "Add faces to Magit manually for things like commit headers eg. (Add: ...).
-Adding faces to Magit is non-trivial since any use of font-lock will break
-fontification of the buffer. This is due to Magit doing all styling with
-`propertize' and black magic. So we apply the faces the manual way.
-Adds Ivy integration so a prompt of (Add, Docs, ...) appears when commiting.
-Can explore icons by evaluating eg.: (all-the-icons-insert-icons-for 'material)
-"
+;;;; Prettify-magit
+(defun module/configure-theme ()
+  ;; Get color-theme-solarized working. It is specified as an additional package
+  ;; above. First we setup some theme modifications - we must do this *before*
+  ;; we load the theme. Note that the color-theme-solarized package appears in
+  ;; the list of themes as plain old 'solarized'.
+  (setq theming-modifications
+        '((sanityinc-solarized-light
+           ;; Provide a sort of "on-off" modeline whereby the current buffer has a nice
+           ;; bright blue background, and all the others are in cream.
+           ;; TODO: Change to use variables here. However, got error:
+           ;; (Spacemacs) Error in dotspacemacs/user-config: Wrong type argument: stringp, pd-blue
+           (mode-line :foreground "#839496" :background "#eee8d5" :inverse-video nil)
+           (powerline-active1 :foreground "#839496" :background "#eee8d5" :inverse-video nil)
+           (powerline-active2 :foreground "#839496" :background "#eee8d5" :inverse-video nil)
+           (mode-line-inactive :foreground "#839496" :background "#eee8d5" :inverse-video nil)
+           (powerline-inactive1 :foreground "#839496" :background "#eee8d5" :inverse-video nil)
+           (powerline-inactive2 :foreground "#839496" :background "#eee8d5" :inverse-video nil)
+           ;; Make a really prominent helm selection line.
+           (helm-selection :foreground "white" :background "red" :inverse-video nil)
+           ;; See comment above about dotspacemacs-colorize-cursor-according-to-state.
+           (cursor :background "#b58900")
+         ))
 
-  (setq my-magit-colors '(:feature "silver"
-                          :fix "#FB6542"    ; sunset
-                          :add "#375E97"    ; sky
-                          :clean "#FFBB00"  ; sunflower
-                          :docs "#3F681C"   ; grass
-                          ))
+        )
 
-  (defface my-magit-base-face
-    `((t :weight bold  :height 1.2))
-    "Base face for magit commit headers."
-    :group 'magit-faces)
+  (set-terminal-parameter nil 'background-mode 'light)
+  (set-frame-parameter nil 'background-mode 'light)
+  (spacemacs/load-theme 'sanityinc-solarized-light)
 
-  (defface my-magit-feature-face
-    `((t :foreground ,(plist-get my-magit-colors :feature)
-         :inherit my-magit-base-face))
-    "Feature commit header face.")
-
-  (defface my-magit-fix-face
-    `((t :foreground ,(plist-get my-magit-colors :fix)
-         :inherit my-magit-base-face))
-    "Fix commit header face.")
-
-  (defface my-magit-add-face
-    `((t :foreground ,(plist-get my-magit-colors :add)
-         :inherit my-magit-base-face))
-    "Add commit header face.")
-
-  (defface my-magit-clean-face
-    `((t :foreground ,(plist-get my-magit-colors :clean)
-         :inherit my-magit-base-face))
-    "Clean commit header face.")
-
-  (defface my-magit-docs-face
-    `((t :foreground ,(plist-get my-magit-colors :docs)
-         :inherit my-magit-base-face))
-    "Docs commit header face.")
-
-  (defface my-magit-master-face
-    `((t :box t
-         :inherit my-magit-base-face))
-    "Docs commit header face.")
-
-  (defface my-magit-origin-face
-    `((t :box t
-         :inherit my-magit-base-face))
-    "Docs commit header face.")
-
-  (setq pretty-magit-faces '(("\\<\\(Feature:\\)"         'my-magit-feature-face)
-                             ("\\<\\(Add:\\)"             'my-magit-add-face)
-                             ("\\<\\(Fix:\\)"             'my-magit-fix-face)
-                             ("\\<\\(Clean:\\)"           'my-magit-clean-face)
-                             ("\\<\\(Docs:\\)"            'my-magit-docs-face)
-                             ("\\<\\(master\\)\\>"        'my-magit-master-face)
-                             ("\\<\\(origin/master\\)\\>" 'my-magit-origin-face))
-
-        pretty-magit-symbols '(("\\<\\(Feature:\\)"      ?)
-                               ("\\<\\(Add:\\)"          ?)
-                               ("\\<\\(Fix:\\)"          ?)
-                               ("\\<\\(Clean:\\)"        ?)
-                               ("\\<\\(Docs:\\)"         ?)
-                               ("\\<\\(master\\)\\>"     ?)
-                               ("\\<\\(origin/master\\)" ?)))
-
-  (defun add-magit-faces ()
-    "Apply `pretty-magit-faces' and `pretty-magit-symbols' to magit buffers."
-    (interactive)
-    (with-silent-modifications
-      (--each pretty-magit-faces
-        (save-excursion
-          (evil-goto-first-line)
-          (while (search-forward-regexp (car it) nil t)
-            (add-face-text-property
-             (match-beginning 1) (match-end 1) (cdr it)))))
-      (--each pretty-magit-symbols
-        (save-excursion
-          (evil-goto-first-line)
-          (while (search-forward-regexp (car it) nil t)
-            (compose-region
-             (match-beginning 1) (match-end 1) (cdr it)))))))
-
-  (setq use-magit-commit-prompt-p nil)
-  (defun use-magit-commit-prompt (&rest args)
-    (setq use-magit-commit-prompt-p t))
-
-  (defun magit-commit-prompt ()
-    "Magit prompt and insert commit header with faces."
-    (interactive)
-    (when use-magit-commit-prompt-p
-      (setq use-magit-commit-prompt-p nil)
-      (insert (ivy-read "Commit Type "
-                        '("Feature: " "Add: " "Fix: " "Clean: " "Docs: ")
-                        :require-match t
-                        :sort t
-                        :preselect "Add: "))
-      (add-magit-faces)
-      (evil-insert 1)))
-
-  ;; Now due to the delayed use of minibuffer in commit buffers, we cannot
-  ;; use add-advice and instead use `git-commit-setup-hook' to run the prompt.
-  ;; However, we only want the prompt for c-c `magit-commit' and not its
-  ;; variants. The only way to distinguish the calling commit mode is through
-  ;; the caller, so we use advice add on `magit-commit' for a prompt predicate.
-
-  (remove-hook 'git-commit-setup-hook 'with-editor-usage-message)
-  (add-hook 'git-commit-setup-hook 'magit-commit-prompt)
-
-  (advice-add 'magit-status :after 'add-magit-faces)
-  (advice-add 'magit-refresh-buffer :after 'add-magit-faces)
-  (advice-add 'magit-commit :after 'use-magit-commit-prompt))
+  ;; Highlights matching parenthesis
+  (show-paren-mode 1)
+  (fancy-battery-mode)
+  ;; Highlight current line
+  (global-hl-line-mode 1))
 
 ;;;; Shell
-
 (defun module/misc/shell ()
   "Quick eshell with vim interaction."
 
@@ -962,7 +812,6 @@ Can explore icons by evaluating eg.: (all-the-icons-insert-icons-for 'material)
     (setq navi-mode-map map)))
 
 ;;;; Outshine-mode
-
 (defun module/configure-outshine ()
   "Outline/Outshine mode bindings and Navi integration."
 
@@ -1039,7 +888,6 @@ Can explore icons by evaluating eg.: (all-the-icons-insert-icons-for 'material)
   (add-hook 'prog-mode-hook 'outline-minor-mode))
 
 ;;;; Babel
-
 (defun module/org/babel ()
   "Org babel languages and config."
 
@@ -1057,128 +905,20 @@ Can explore icons by evaluating eg.: (all-the-icons-insert-icons-for 'material)
                                (http .    t)  ; Requests
                                )))
 
+;;;; Org-mobile
 (defun module/org/mobile ()
-  ; (use-package org-mobile :disabled t
-  ; :init
-  ; (progn
-  ;   (autoload 'org-mobile-pull "org-mobile" nil t)
-  ;   (autoload 'org-mobile-push "org-mobile" nil t))
-  ; :config
-  ; (progn
-  ;   (setq org-mobile-directory "~/Dropbox/mobile")
-  ;   (setq org-mobile-inbox-for-pull "~/personal/mobileorg.org")
-  ;   (setq default-buffer-file-coding-system 'utf-8)
-  ;   (setq org-mobile-files '("/cygdrive/c/my/personal/organizer.org"
-  ;                            "/cygdrive/c/my/personal/business.org"
-  ;                            "/cygdrive/c/my/personal/books.org"))
-  ;   (setq org-mobile-agendas '("a"))))
-(quote
- (
- '(org-mobile-directory "~/Dropbox/Apps/MobileOrg")
- '(org-mobile-files (quote ("~/Notes/org/todo.org")))
- ;;'(org-mobile-files-exclude-regexp "\\(TODO\\(-.*\\)?\\)\\'")
- '(org-mobile-inbox-for-pull "~/Notes/org/from-mobile.org")))
 
-(defun save-org-mode-files ()
-  (dolist (buf (buffer-list))
-    (with-current-buffer buf
-      (when (eq major-mode 'org-mode)
-        (if (and (buffer-modified-p) (buffer-file-name))
-            (save-buffer))))))
-
-(run-with-idle-timer 25 t 'save-org-mode-files)
-
-(defun my-org-push-mobile ()
-  (interactive)
-  (with-current-buffer (find-file-noselect "~/Notes/org/todo.org")
-    (org-mobile-push)))
-
-(eval-when-compile
-  (defvar org-clock-current-task)
-  (defvar org-mobile-directory)
-  (defvar org-mobile-capture-file))
-
-(defun quickping (host)
-  (= 0 (call-process "ping" nil nil nil "-c1" "-W50" "-q" host)))
-
-(defun org-my-auto-exclude-function (tag)
-  (and (cond
-        ((string= tag "call")
-         (let ((hour (nth 2 (decode-time))))
-           (or (< hour 8) (> hour 21))))
-        ((string= tag "errand")
-         (let ((hour (nth 2 (decode-time))))
-           (or (< hour 12) (> hour 17))))
-        ((or (string= tag "home") (string= tag "nasim"))
-         (with-temp-buffer
-           (call-process "ifconfig" nil t nil "en0" "inet")
-           (call-process "ifconfig" nil t nil "en1" "inet")
-           (call-process "ifconfig" nil t nil "bond0" "inet")
-           (goto-char (point-min))
-           (not (re-search-forward "inet 192\\.168\\.9\\." nil t))))
-        ((string= tag "net")
-         (not (quickping "imap.gmail.com")))
-        ((string= tag "fun")
-         org-clock-current-task))
-       (concat "-" tag)))
-
-(defun my-mobileorg-convert ()
-  (interactive)
-  (while (re-search-forward "^\\* " nil t)
-    (goto-char (match-beginning 0))
-    (insert ?*)
-    (forward-char 2)
-    (insert "TODO ")
-    (goto-char (line-beginning-position))
-    (forward-line)
-    (re-search-forward "^\\[")
-    (goto-char (match-beginning 0))
-    (let ((uuid
-           (save-excursion
-             (re-search-forward "^\\*\\* Note ID: \\(.+\\)")
-             (prog1
-                 (match-string 1)
-               (delete-region (match-beginning 0)
-                              (match-end 0))))))
-      (insert (format "SCHEDULED: %s\n:PROPERTIES:\n"
-                      (format-time-string (org-time-stamp-format))))
-      (insert (format ":ID:       %s\n:CREATED:  " uuid)))
-    (forward-line)
-    (insert ":END:")))
-
-(defun my-org-convert-incoming-items ()
-  (interactive)
-  (with-current-buffer
-      (find-file-noselect (expand-file-name org-mobile-capture-file
-                                            org-mobile-directory))
-    (goto-char (point-min))
-    (unless (eobp)
-      (my-mobileorg-convert)
-      (goto-char (point-max))
-      (if (bolp)
-          (delete-char -1))
-      (let ((tasks (buffer-string)))
-        (set-buffer-modified-p nil)
-        (kill-buffer (current-buffer))
-        (with-current-buffer (find-file-noselect "~/Notes/org/todo.org")
-          (save-excursion
-            (goto-char (point-min))
-            (re-search-forward "^\\* Inbox$")
-            (re-search-forward "^:END:")
-            (forward-line)
-            (goto-char (line-beginning-position))
-            (if (and tasks (> (length tasks) 0))
-                (insert tasks ?\n))))))))
-
-(defun my-org-mobile-pre-pull-function ()
-  (my-org-convert-incoming-items))
-
-(add-hook 'org-mobile-pre-pull-hook 'my-org-mobile-pre-pull-function)
-
+    (setq org-mobile-directory "~/Dropbox/Apps/MobileOrg")
+    (setq org-mobile-inbox-for-pull "~/Notes/org/mobileorg.org")
+    (setq default-buffer-file-coding-system 'utf-8)
+    (setq org-mobile-files '("~/Notes/org/organizer.org"
+                             "~/Notes/org/work.org"
+                             "~/Notes/org/books.org"
+                             "~/Notes/org/todo.org"))
+    (setq org-mobile-agendas '("a"))
 )
 
 ;;;; Misc
-
 (defun module/org/misc ()
   "Misc org-mode bindings and improvements."
 
@@ -1214,8 +954,145 @@ Can explore icons by evaluating eg.: (all-the-icons-insert-icons-for 'material)
     "gu" 'outline-previous-visible-heading))
 
 ;;;; Templates
-
 (defun module/org/templates ()
+
+  ;; Org Capture Templates
+
+    (defun my/org-contacts-template-email (&optional return-value)
+    "Try to return the contact email for a template.
+  If not found return RETURN-VALUE or something that would ask the user."
+    (or (cadr (if (gnus-alive-p)
+                  (gnus-with-article-headers
+                    (mail-extract-address-components
+                     (or (mail-fetch-field "Reply-To") (mail-fetch-field "From") "")))))
+        return-value
+        (concat "%^{" org-contacts-email-property "}p")))
+
+
+  (defvar my/org-basic-task-template "* TODO %^{Task}
+:PROPERTIES:
+:Effort: %^{effort|1:00|0:05|0:15|0:30|2:00|4:00}
+:END:
+Captured %<%Y-%m-%d %H:%M>
+%?
+
+%i
+" "Basic task data")
+  (setq org-capture-templates
+        `(("t" "Tasks" entry
+           (file+headline "~/Notes/org/organizer.org" "Inbox")
+           ,my/org-basic-task-template)
+          ("T" "Quick task" entry
+           (file+headline "~/Notes/org/organizer.org" "Inbox")
+           "* TODO %^{Task}\nSCHEDULED: %t\n"
+           :immediate-finish t)
+          ("i" "Interrupting task" entry
+           (file+headline "~/Notes/org/organizer.org" "Inbox")
+           "* STARTED %^{Task}"
+           :clock-in :clock-resume)
+          ("e" "Emacs idea" entry
+           (file+headline "~/code/emacs-notes/tasks.org" "Emacs")
+           "* TODO %^{Task}"
+           :immediate-finish t)
+          ("E" "Energy" table-line
+           (file+headline "~/Notes/org/organizer.org" "Track energy")
+           "| %U | %^{Energy 5-awesome 3-fuzzy 1-zzz} | %^{Note} |"
+           :immediate-finish t
+           )
+          ("b" "Business task" entry
+           (file+headline "~/Notes/org/business.org" "Tasks")
+           ,my/org-basic-task-template)
+          ("p" "People task" entry
+           (file+headline "~/Notes/org/people.org" "Tasks")
+           ,my/org-basic-task-template)
+          ("j" "Journal entry" plain
+           (file+datetree "~/Notes/org/journal.org")
+           "%K - %a\n%i\n%?\n"
+           :unnarrowed t)
+          ("J" "Journal entry with date" plain
+           (file+datetree+prompt "~/Notes/org/journal.org")
+           "%K - %a\n%i\n%?\n"
+           :unnarrowed t)
+          ("s" "Journal entry with date, scheduled" entry
+           (file+datetree+prompt "~/Notes/org/journal.org")
+           "* \n%K - %a\n%t\t%i\n%?\n"
+           :unnarrowed t)
+          ("c" "Protocol Link" entry (file+headline ,org-default-notes-file "Inbox")
+           "* [[%:link][%:description]] \n\n#+BEGIN_QUOTE\n%i\n#+END_QUOTE\n\n%?\n\nCaptured: %U")
+          ("db" "Done - Business" entry
+           (file+headline "~/Notes/org/business.org" "Tasks")
+           "* DONE %^{Task}\nSCHEDULED: %^t\n%?")
+          ("dp" "Done - People" entry
+           (file+headline "~/Notes/org/people.org" "Tasks")
+           "* DONE %^{Task}\nSCHEDULED: %^t\n%?")
+          ("dt" "Done - Task" entry
+           (file+headline "~/Notes/org/organizer.org" "Inbox")
+           "* DONE %^{Task}\nSCHEDULED: %^t\n%?")
+          ("q" "Quick note" item
+           (file+headline "~/Notes/org/organizer.org" "Quick notes"))
+          ("B" "Book" entry
+           (file+datetree "~/Notes/org/books.org" "Inbox")
+           "* %^{Title}  %^g
+  %i
+  *Author(s):* %^{Author} \\\\
+  *ISBN:* %^{ISBN}
+
+  %?
+
+  *Review on:* %^t \\
+  %a
+  %U"
+           :clock-in :clock-resume)
+           ("C" "Contact" entry (file "~/Notes/org/contacts.org")
+            "* %(org-contacts-template-name)
+  :PROPERTIES:
+  :EMAIL: %(my/org-contacts-template-email)
+  :END:")
+           ("n" "Daily note" table-line (file+olp "~/Notes/org/organizer.org" "Inbox")
+            "| %u | %^{Note} |"
+            :immediate-finish t)
+           ("r" "Notes" entry
+            (file+datetree "~/Notes/org/organizer.org")
+            "* %?\n\n%i\n%U\n"
+            )))
+  (bind-key "C-M-r" 'org-capture)
+;   (setq org-capture-templates
+;         (quote (("w" "Add Work Task" entry
+;       (file+headline "~/notes/org/todo.org" "Inbox")
+;       "* TODO %? \n:SCHEDULED: %t \n:PROPERTIES:
+; :CLIENT: \n:TICKET:
+; :ID:       %(shell-command-to-string \"uuidgen\"):CREATED:  %U
+; :END:" :prepend t)
+;                ("t" "todo" entry (file org-default-notes-file)
+;                  "* TODO %?\n%U\n%a
+; :ID:       %(shell-command-to-string \"uuidgen\")
+; :CREATED:  %U
+; :END:" :prepend t)
+;                 ("m" "meeting" entry (file org-default-notes-file)
+; "* MEETING with %? :MEETING:\n%U
+; :ID:       %(shell-command-to-string \"uuidgen\")
+; :CREATED:  %U \n:END:" :prepend t)
+;                 ("i" "idea" entry (file org-default-notes-file)
+;                  "* %? :IDEA:\n%U\n%a
+; :ID:       %(shell-command-to-string \"uuidgen\")
+; :CREATED:  %U\n:END:" :prepend t)
+;                 ("n" "note" entry (file org-default-notes-file)
+;                  "* %? :NOTE:\n%U\n%a
+; :ID:       %(shell-command-to-string \"uuidgen\")
+; :CREATED:  %U \n:END:" :prepend t)
+;                 ("h" "habit" entry (file jsg/org-default-notes-file)
+;                  "* NEXT %?\n%U\n%a\nSCHEDULED: %(format-time-string \"%<<%Y-%m-%d %a .+1d/3d>>\")\n:PROPERTIES:\n:STYLE: habit\n:REPEAT_TO_STATE: NEXT\n
+; :END:" :prepend t)
+;      ("c" "Calendar" entry
+;       (file+headline "~/notes/org/todo.org" "Inbox")
+;       "* APPT %? \n:SCHEDULED: %t
+; :PROPERTIES: \n:ID:       %(shell-command-to-string \"uuidgen\")
+; :CREATED:  %U \n:END:" :prepend t)
+;       ("J" "Journal entry with date" plain
+;          (file+datetree+prompt "~/notes/org/journal.org")
+;          "%K - %a\n%i\n%?\n"
+;          :unnarrowed t))))
+
   "Org-babel template code-block expansions."
 
   (mapc (lambda (x) (add-to-list 'org-structure-template-alist x))
@@ -1234,134 +1111,146 @@ Can explore icons by evaluating eg.: (all-the-icons-insert-icons-for 'material)
          '("clps" ":PROPERTIES:\n :HTML_CONTAINER_CLASS: hsCollapsed\n :END:\n")
          )))
 
-(defun module/org/org-projects()
+;;;; Org project management
+(defun module/org/org-projects ()
 
   (defun my/org-show-active-projects ()
     "Show my current projects."
     (interactive)
     (org-tags-view nil "project-inactive-someday"))
 
-  (defun my/org-agenda-project-agenda ()
-    "Return the project headline and up to `my/org-agenda-limit-items' tasks."
-    (save-excursion
-      (let* ((marker (org-agenda-new-marker))
-             (heading
-              (org-agenda-format-item "" (org-get-heading) (org-get-category) nil))
-             (org-agenda-restrict t)
-             (org-agenda-restrict-begin (point))
-             (org-agenda-restrict-end (org-end-of-subtree 'invisible))
-             ;; Find the TODO items in this subtree
-             (list (org-agenda-get-day-entries (buffer-file-name) (calendar-current-date) :todo)))
-        (org-add-props heading
-            (list 'face 'defaults
-                  'done-face 'org-agenda-done
-                  'undone-face 'default
-                  'mouse-face 'highlight
-                  'org-not-done-regexp org-not-done-regexp
-                  'org-todo-regexp org-todo-regexp
-                  'org-complex-heading-regexp org-complex-heading-regexp
-                  'help-echo
-                  (format "mouse-2 or RET jump to org file %s"
-                          (abbreviate-file-name
-                           (or (buffer-file-name (buffer-base-buffer))
-                               (buffer-name (buffer-base-buffer))))))
-          'org-marker marker
-          'org-hd-marker marker
-          'org-category (org-get-category)
-          'type "tagsmatch")
-        (concat heading "\n"
-                (org-agenda-finalize-entries list)))))
+    (defun my/org-agenda-project-agenda ()
+      "Return the project headline and up to `my/org-agenda-limit-items' tasks."
+      (save-excursion
+        (let* ((marker (org-agenda-new-marker))
+               (heading
+                (org-agenda-format-item "" (org-get-heading) (org-get-category) nil))
+               (org-agenda-restrict t)
+               (org-agenda-restrict-begin (point))
+               (org-agenda-restrict-end (org-end-of-subtree 'invisible))
+               ;; Find the TODO items in this subtree
+               (list (org-agenda-get-day-entries (buffer-file-name) (calendar-current-date) :todo)))
+          (org-add-props heading
+              (list 'face 'defaults
+                    'done-face 'org-agenda-done
+                    'undone-face 'default
+                    'mouse-face 'highlight
+                    'org-not-done-regexp org-not-done-regexp
+                    'org-todo-regexp org-todo-regexp
+                    'org-complex-heading-regexp org-complex-heading-regexp
+                    'help-echo
+                    (format "mouse-2 or RET jump to org file %s"
+                            (abbreviate-file-name
+                             (or (buffer-file-name (buffer-base-buffer))
+                                 (buffer-name (buffer-base-buffer))))))
+            'org-marker marker
+            'org-hd-marker marker
+            'org-category (org-get-category)
+            'type "tagsmatch")
+          (concat heading "\n"
+                  (org-agenda-finalize-entries list))))
 
-  (defun my/org-agenda-projects-and-tasks (match)
-    "Show TODOs for all `org-agenda-files' headlines matching MATCH."
-    (interactive "MString: ")
-    (let ((todo-only nil))
-      (if org-agenda-overriding-arguments
-          (setq todo-only (car org-agenda-overriding-arguments)
-                match (nth 1 org-agenda-overriding-arguments)))
-      (let* ((org-tags-match-list-sublevels
-              org-tags-match-list-sublevels)
-             (completion-ignore-case t)
-             rtn rtnall files file pos matcher
-             buffer)
-        (when (and (stringp match) (not (string-match "\\S-" match)))
-          (setq match nil))
-        (when match
-          (setq matcher (org-make-tags-matcher match)
-                match (car matcher) matcher (cdr matcher)))
-        (catch 'exit
-          (if org-agenda-sticky
-              (setq org-agenda-buffer-name
-                    (if (stringp match)
-                        (format "*Org Agenda(%s:%s)*"
-                                (or org-keys (or (and todo-only "M") "m")) match)
-                      (format "*Org Agenda(%s)*" (or (and todo-only "M") "m")))))
-          (org-agenda-prepare (concat "TAGS " match))
-          (org-compile-prefix-format 'tags)
-          (org-set-sorting-strategy 'tags)
-          (setq org-agenda-query-string match)
-          (setq org-agenda-redo-command
-                (list 'org-tags-view `(quote ,todo-only)
-                      (list 'if 'current-prefix-arg nil `(quote ,org-agenda-query-string))))
-          (setq files (org-agenda-files nil 'ifmode)
-                rtnall nil)
-          (while (setq file (pop files))
-            (catch 'nextfile
-              (org-check-agenda-file file)
-              (setq buffer (if (file-exists-p file)
-                               (org-get-agenda-file-buffer file)
-                             (error "No such file %s" file)))
-              (if (not buffer)
-                  ;; If file does not exist, error message to agenda
-                  (setq rtn (list
-                             (format "ORG-AGENDA-ERROR: No such org-file %s" file))
-                        rtnall (append rtnall rtn))
-                (with-current-buffer buffer
-                  (unless (derived-mode-p 'org-mode)
-                    (error "Agenda file %s is not in `org-mode'" file))
-                  (save-excursion
-                    (save-restriction
-                      (if org-agenda-restrict
-                          (narrow-to-region org-agenda-restrict-begin
-                                            org-agenda-restrict-end)
-                        (widen))
-                      (setq rtn (org-scan-tags 'my/org-agenda-project-agenda matcher todo-only))
-                      (setq rtnall (append rtnall rtn))))))))
-          (if org-agenda-overriding-header
-              (insert (org-add-props (copy-sequence org-agenda-overriding-header)
-                          nil 'face 'org-agenda-structure) "\n")
-            (insert "Headlines with TAGS match: ")
-            (add-text-properties (point-min) (1- (point))
-                                 (list 'face 'org-agenda-structure
-                                       'short-heading
-                                       (concat "Match: " match)))
-            (setq pos (point))
-            (insert match "\n")
-            (add-text-properties pos (1- (point)) (list 'face 'org-warning))
-            (setq pos (point))
-            (unless org-agenda-multi
-              (insert "Press `C-u r' to search again with new search string\n"))
-            (add-text-properties pos (1- (point)) (list 'face 'org-agenda-structure)))
-          (org-agenda-mark-header-line (point-min))
-          (when rtnall
-            (insert (mapconcat 'identity rtnall "\n") ""))
-          (goto-char (point-min))
-          (or org-agenda-multi (org-agenda-fit-window-to-buffer))
-          (add-text-properties (point-min) (point-max)
-                               `(org-agenda-type tags
-                                                 org-last-args (,todo-only ,match)
-                                                 org-redo-cmd ,org-agenda-redo-command
-                                                 org-series-cmd ,org-cmd))
-          (org-agenda-finalize)
-          (setq buffer-read-only t)))))
+    (defun jump-to-org-agenda ()
+      (interactive)
+      (let ((buf (get-buffer "*Org Agenda*"))
+            wind)
+        (if buf
+            (if (setq wind (get-buffer-window buf))
+                (select-window wind)
+              (if (called-interactively-p)
+                  (progn
+                    (select-window (display-buffer buf t t))
+                    (org-fit-window-to-buffer)
+                    ;; (org-agenda-redo)
+                    )
+                (with-selected-window (display-buffer buf)
+                  (org-fit-window-to-buffer)
+                  ;; (org-agenda-redo)
+                  )))
+          (call-interactively 'org-agenda-list))))
 
-  )
-
-(defun module/org/mobile ()
-
-
-
-  )
+      (defun my/org-agenda-projects-and-tasks (match)
+        "Show TODOs for all `org-agenda-files' headlines matching MATCH."
+        (interactive "MString: ")
+        (let ((todo-only nil))
+          (if org-agenda-overriding-arguments
+              (setq todo-only (car org-agenda-overriding-arguments)
+                    match (nth 1 org-agenda-overriding-arguments)))
+          (let* ((org-tags-match-list-sublevels
+                  org-tags-match-list-sublevels)
+                 (completion-ignore-case t)
+                 rtn rtnall files file pos matcher
+                 buffer)
+            (when (and (stringp match) (not (string-match "\\S-" match)))
+              (setq match nil))
+            (when match
+              (setq matcher (org-make-tags-matcher match)
+                    match (car matcher) matcher (cdr matcher)))
+            (catch 'exit
+              (if org-agenda-sticky
+                  (setq org-agenda-buffer-name
+                        (if (stringp match)
+                            (format "*Org Agenda(%s:%s)*"
+                                    (or org-keys (or (and todo-only "M") "m")) match)
+                          (format "*Org Agenda(%s)*" (or (and todo-only "M") "m")))))
+              (org-agenda-prepare (concat "TAGS " match))
+              (org-compile-prefix-format 'tags)
+              (org-set-sorting-strategy 'tags)
+              (setq org-agenda-query-string match)
+              (setq org-agenda-redo-command
+                    (list 'org-tags-view `(quote ,todo-only)
+                          (list 'if 'current-prefix-arg nil `(quote ,org-agenda-query-string))))
+              (setq files (org-agenda-files nil 'ifmode)
+                    rtnall nil)
+              (while (setq file (pop files))
+                (catch 'nextfile
+                  (org-check-agenda-file file)
+                  (setq buffer (if (file-exists-p file)
+                                   (org-get-agenda-file-buffer file)
+                                 (error "No such file %s" file)))
+                  (if (not buffer)
+                      ;; If file does not exist, error message to agenda
+                      (setq rtn (list
+                                 (format "ORG-AGENDA-ERROR: No such org-file %s" file))
+                            rtnall (append rtnall rtn))
+                    (with-current-buffer buffer
+                      (unless (derived-mode-p 'org-mode)
+                        (error "Agenda file %s is not in `org-mode'" file))
+                      (save-excursion
+                        (save-restriction
+                          (if org-agenda-restrict
+                              (narrow-to-region org-agenda-restrict-begin
+                                                org-agenda-restrict-end)
+                            (widen))
+                          (setq rtn (org-scan-tags 'my/org-agenda-project-agenda matcher todo-only))
+                          (setq rtnall (append rtnall rtn))))))))
+              (if org-agenda-overriding-header
+                  (insert (org-add-props (copy-sequence org-agenda-overriding-header)
+                              nil 'face 'org-agenda-structure) "\n")
+                (insert "Headlines with TAGS match: ")
+                (add-text-properties (point-min) (1- (point))
+                                     (list 'face 'org-agenda-structure
+                                           'short-heading
+                                           (concat "Match: " match)))
+                (setq pos (point))
+                (insert match "\n")
+                (add-text-properties pos (1- (point)) (list 'face 'org-warning))
+                (setq pos (point))
+                (unless org-agenda-multi
+                  (insert "Press `C-u r' to search again with new search string\n"))
+                (add-text-properties pos (1- (point)) (list 'face 'org-agenda-structure)))
+              (org-agenda-mark-header-line (point-min))
+              (when rtnall
+                (insert (mapconcat 'identity rtnall "\n") ""))
+              (goto-char (point-min))
+              (or org-agenda-multi (org-agenda-fit-window-to-buffer))
+              (add-text-properties (point-min) (point-max)
+                                   `(org-agenda-type tags
+                                                     org-last-args (,todo-only ,match)
+                                                     org-redo-cmd ,org-agenda-redo-command
+                                                     org-series-cmd ,org-cmd))
+              (org-agenda-finalize)
+              (setq buffer-read-only t)))))))
 
 ;; Weekly Reviews
 (defun module/org/weekly-review ()
@@ -1393,16 +1282,16 @@ Can explore icons by evaluating eg.: (all-the-icons-insert-icons-for 'material)
                   (setq temp-list nil)))
             (setq temp-list (cdr temp-list)))))))
 
-  (ert-deftest _my/extract-tasks-from-agenda ()
-    (let (list-a list-b (line-re "\\([^:]+\\):\\( \\)\\(.*\\)"))
-      (_my/extract-tasks-from-agenda
-       "listA: Task 1\nother: Task 2\nlistA: Task 3"
-       '(("listA" . list-a)
-         ("." . list-b))
-       "- [ ] "
-       line-re)
-      (should (equal list-a '("- [ ] Task 1" "- [ ] Task 3")))
-      (should (equal list-b '("- [ ] Task 2")))))
+    (ert-deftest _my/extract-tasks-from-agenda ()
+      (let (list-a list-b (line-re "\\([^:]+\\):\\( \\)\\(.*\\)"))
+        (_my/extract-tasks-from-agenda
+         "listA: Task 1\nother: Task 2\nlistA: Task 3"
+         '(("listA" . list-a)
+           ("." . list-b))
+         "- [ ] "
+         line-re)
+        (should (equal list-a '("- [ ] Task 1" "- [ ] Task 3")))
+        (should (equal list-b '("- [ ] Task 2")))))
 
   (defun _my/get-upcoming-tasks ()
     (save-window-excursion
@@ -1483,8 +1372,8 @@ Can explore icons by evaluating eg.: (all-the-icons-insert-icons-for 'material)
                      (my/quantified-get-hours "Discretionary - Productive - Coding" time-summary))
              (mapconcat 'identity life "\n") "\n"
              (mapconcat 'identity life-next "\n") "\n"
-             (format "  - *Sewing* (%.1fh)\n"
-                     (my/quantified-get-hours "Discretionary - Productive - Sewing" time-summary))
+             (format "  - *Woodwork* (%.1fh)\n"
+                     (my/quantified-get-hours "Discretionary - Productive - Woodwork" time-summary))
              (format "  - *Writing* (%.1fh)\n"
                      (my/quantified-get-hours "Discretionary - Productive - Writing" time-summary))
              (format "- *Discretionary - Play* (%.1fh - %d%%)\n"
@@ -1496,9 +1385,6 @@ Can explore icons by evaluating eg.: (all-the-icons-insert-icons-for 'material)
              (format "- *Unpaid work* (%.1fh - %d%%)\n"
                      (my/quantified-get-hours "Unpaid work" time-summary)
                      (/ (my/quantified-get-hours "Unpaid work" time-summary) 1.68))
-             (format "  - *Childcare* (%.1fh - %d%% of total)\n"
-                     (my/quantified-get-hours '("Unpaid work - Childcare") time-summary)
-                     (/ (my/quantified-get-hours '("Unpaid work - Childcare") time-summary) 1.68))
              (format "- *Sleep* (%.1fh - %d%% - average of %.1f per day)\n"
                      (my/quantified-get-hours "Sleep" time-summary)
                      (/ (my/quantified-get-hours "Sleep" time-summary) 1.68)
@@ -1518,7 +1404,7 @@ Can explore icons by evaluating eg.: (all-the-icons-insert-icons-for 'material)
                                    "")))
           (org-capture nil "t")
           (insert "TODO " task "\nSCHEDULED: <" (org-read-date) ">")))
-;(define-key org-mode-map (kbd "C-c t") 'my/org-add-line-item-task)
+
 
     (defun my/org-prepare-weekly-review (&optional date skip-urls)
       "Prepare weekly review template."
@@ -1538,69 +1424,244 @@ Can explore icons by evaluating eg.: (all-the-icons-insert-icons-for 'material)
            "\n")))
   )
 
-;;;; Aspell
+(defun module/org/timetracking()
 
+    (defvar my/org-quantified-categories
+    '(("Business"
+       ("Earn" . "Business - Earn")
+       ("Connect" . "Business - Connect")
+       ("Build" . "Business - Build"))
+      ("Discretionary"
+       ("Social" . "Discretionary - Social")
+       ("Productive" . "Discretionary - Productive")
+       ("Woodwork" . "Discretionary - Productive - Woodwork")
+       ("Writing" . "Discretionary - Productive - Writing")
+       ("Reading" . "Discretionary - Productive - Reading")
+       ("Emacs" . "Discretionary - Productive - Emacs")
+       ("Play" . "Discretionary - Play"))
+      ("Personal"
+       ("Routines" . "Personal - Routines"))
+      ("Sleep" nil))
+    "Categories for time summary.")
+
+  (defun my/org-summarize-time-use (&optional start end)
+    (require 'quantified)
+    (interactive (list (org-read-date) (org-read-date)))
+    (let ((time-summary (quantified-summarize-time start end))
+          (categories my/org-quantified-categories)
+          result)
+      (setq result
+            (mapconcat
+             (lambda (a)
+               (if (assoc (car a) time-summary)
+                   (concat
+                    (format "- %s: %.1f hours" (car a) (/ (cdr (assoc (car a) time-summary)) 3600.0))
+                    (if (cdr a)
+                        (let ((detail
+                               (delq nil
+                                     (mapcar (lambda (b)
+                                               (if (assoc (cdr b) time-summary)
+                                                   (format "%s: %.1f"
+                                                           (car b)
+                                                           (/ (cdr (assoc (cdr b) time-summary)) 3600.0))
+                                                 nil))
+                                             (cdr a)))))
+                          (if detail
+                              (concat " (" (mapconcat 'identity detail ", ") ")")
+                            ""))
+                      "")
+                    (if (string-equal (car a) "Sleep")
+                        (format " - average of %.1f hours per day" (/ (cdr (assoc (car a) time-summary)) 3600.0 7.0))
+                      "")
+                    "\n")))
+       categories ""))
+      (if (called-interactively-p 'any)
+        (insert result)
+        result)))
+    (defun my/org-summarize-upcoming-week ()
+      "Summarize upcoming tasks as a list."
+      (interactive)
+      (org-agenda nil "w")
+      (let ((string (buffer-string))
+            business relationships life)
+        (with-temp-buffer
+          (insert string)
+          (goto-char (point-min))
+          (while (re-search-forward my/weekly-review-line-regexp nil t)
+            (cond
+             ((string= (match-string 1) "routines") nil) ; skip routine tasks
+             ((string= (match-string 1) "business")
+              (add-to-list 'business (concat "  - [ ] " (match-string 3))))
+             ((string= (match-string 1) "people")
+              (add-to-list 'relationships (concat "  - [ ] " (match-string 3))))
+             (t (add-to-list 'life (concat "  - [ ] " (match-string 3)))))))
+        (setq string
+              (concat
+          "*Plans for next week*\n"
+          "- Business\n"
+          (mapconcat 'identity business "\n")
+          "\n- Relationships\n"
+          (mapconcat 'identity relationships "\n")
+          "\n- Life\n"
+          (mapconcat 'identity life "\n")))
+        (if (called-interactively-p)
+            (kill-new string)
+          string)))
+
+      (defun my/org-summarize-previous-week ()
+      "Summarize previously-completed tasks as a list."
+      (interactive)
+      (save-window-excursion
+        (org-agenda nil "w")
+        (org-agenda-later -1)
+        (org-agenda-log-mode 16)
+        (let ((string (buffer-string))
+              business relationships life)
+          (with-temp-buffer
+            (insert string)
+          (goto-char (point-min))
+          (while (re-search-forward my/weekly-review-line-regexp nil t)
+            (cond
+             ((string= (match-string 1) "routines") nil) ; skip routine tasks
+             ((string= (match-string 1) "business")
+              (add-to-list 'business (concat "  - " (match-string 2))))
+             ((string= (match-string 1) "people")
+              (add-to-list 'relationships (concat "  - " (match-string 2))))
+             (t (add-to-list 'life (concat "  - " (match-string 2)))))))
+        (setq string
+              (concat
+               "*Accomplished this week*\n\n"
+               "- Business\n"
+               (mapconcat 'identity business "\n")
+               "\n- Relationships\n"
+               (mapconcat 'identity relationships "\n")
+               "\n- Life\n"
+               (mapconcat 'identity life "\n")))
+        (if (called-interactively-p)
+            (kill-new string)
+          string))))
+
+    (defun my/quantified-compare (start1 end1 start2 end2 &optional categories label1 label2)
+    "Return a table comparing the times for START1 - END1 and START2 - END2."
+    (let* ((start2 (org-read-date nil nil (or start2 "-sat")))
+           (end2 (org-read-date nil nil (or end2 "+1")))
+           (start1 (org-read-date nil nil (or start1 "-4sat")))
+           (end1 (org-read-date nil nil (or end1 "-sat")))
+           (time2 (quantified-summarize-time start2 end2))
+           (time1 (quantified-summarize-time start1 end1))
+           (label1 (or label1 "Period 1 %"))
+           (label2 (or label2 "Period 2 %"))
+           (total2 (* 0.01 (- (org-time-string-to-seconds end2) (org-time-string-to-seconds start2))))
+           (total1 (* 0.01 (- (org-time-string-to-seconds end1) (org-time-string-to-seconds start1))))
+           (keys (or categories (-union (mapcar 'car time1) (mapcar 'car time2)))))
+      ;; Build a list comparing the two
+      (append
+      `(("Category" ,label1 ,label2 "Diff" "h/wk" "Diff h/wk"))
+      (mapcar (lambda (key)
+                (list
+                 key
+                 (format "%.1f" (/ (or (assoc-default key time1) 0) total1))
+                 (format "%.1f" (/ (or (assoc-default key time2) 0) total2))
+                 (format "%.1f" (- (/ (or (assoc-default key time2) 0) total2)
+                                   (/ (or (assoc-default key time1) 0) total1)))
+                 (format "%.1f" (* (/ (or (assoc-default key time2) 0) total1) 1.68))
+                 (format "%.1f"
+                         (* (- (/ (or (assoc-default key time2) 0) total2)
+                               (/ (or (assoc-default key time1) 0) total1)) 1.68))
+                 )) keys))))
+  )
+
+;;;; Aspell
 (defun module/misc/aspell ()
   "Setup aspell."
-
   (setq ispell-program-name "aspell"))
 
+;;;; Gnus
 (defun module/misc/gnus ()
-  "GNUS setup and user details. Nothing significant atm."
 
-  (setq user-mail-address	"jgraham20@gmail.com"
-        user-full-name	"Jason Graham"
+  ;; Get email, and store in nnml
+  (setq gnus-secondary-select-methods
+  '(
+    (nnimap "gmail"
+             (nnimap-address
+              "imap.gmail.com")
+             (nnimap-server-port 993)
+             (nnimap-stream ssl))
+    ))
 
-        ;; Get mail
-        gnus-secondary-select-methods
-        '((nnimap "gmail"
-                  (nnimap-address "imap.gmail.com")
-                  (nnimap-server-port 993)
-                  (nnimap-stream ssl))
-          (nntp "gmane"
-                (nntp-address "news.gmane.org"))
-          (nntp "news.gwene.org"))
+  ;; Send email via Gmail:
+  (setq message-send-mail-function 'smtpmail-send-it
+    smtpmail-default-smtp-server "smtp.gmail.com")
 
-        ;; Send mail
-        message-send-mail-function 'smtpmail-send-it
+  ;; Archive outgoing email in Sent folder on imap.gmail.com:
+  (setq gnus-message-archive-method '(nnimap "imap.gmail.com")
+      gnus-message-archive-group "[Gmail]/Sent Mail")
 
-        ;; Archive outgoing email in Sent folder on imap.gmail.com
-        gnus-message-archive-method '(nnimap "imap.gmail.com")
-        gnus-message-archive-group "[Gmail]/Sent Mail"
+  ;; set return email address based on incoming email address
+  (setq gnus-posting-styles
+      '(((header "to" "address@outlook.com")
+         (address "address@outlook.com"))
+    ((header "to" "address@gmail.com")
+       (address "address@gmail.com"))))
 
-        ;; Auth
-        smtpmail-starttls-credentials '(("smtp.gmail.com" 587 nil nil))
-        smtpmail-auth-credentials '(("smtp.gmail.com" 587
-                                     "jgraham20@gmail.com" nil))
+  ;; store email in ~/gmail directory
+  (setq nnml-directory "~/gmail")
+  (setq message-directory "~/gmail"))
 
-        ;; SMPT Server config
-        smtpmail-default-smtp-server "smtp.gmail.com"
-        smtpmail-smtp-server "smtp.gmail.com"
-        smtpmail-smtp-service 587
+;;;; mu4e
+(defun module/misc/mail ()
 
-        ;; set return email address based on incoming email address
-        gnus-posting-styles
-        '(((header "to" "address@outlook.com")
-           (address  "address@outlook.com"))
-          ((header "to" "address@gmail.com")
-           (address "address@gmail.com")))
+  ;; default
+  (setq mu4e-maildir "~/Maildir/Gmail")
 
-        ;; store email in ~/gmail directory
-        nnml-directory "~/gmail"
-        message-directory "~/gmail"
-        mm-inline-large-images 'resize))
+  (setq mu4e-drafts-folder "/[Gmail].Drafts")
+  (setq mu4e-sent-folder   "/[Gmail].Sent Mail")
+  (setq mu4e-trash-folder  "/[Gmail].Trash")
 
-;;; Python
+  ;; don't save message to Sent Messages, Gmail/IMAP takes care of this
+  (setq mu4e-sent-messages-behavior 'delete)
 
-(defun module/python ()
-  (require 'python)
-  ;;(unless-linux-call 'module/python/windows-pytest)
-  (module/python/fixes)
-  (module/python/mypy)
-  (module/python/venvs))
+  ;; (See the documentation for `mu4e-sent-messages-behavior' if you have
+  ;; additional non-Gmail addresses and want assign them different
+  ;; behavior.)
+
+  ;; setup some handy shortcuts
+  ;; you can quickly switch to your Inbox -- press ``ji''
+  ;; then, when you want archive some messages, move them to
+  ;; the 'All Mail' folder by pressing ``ma''.
+
+  (setq mu4e-maildir-shortcuts
+      '( ("/INBOX"               . ?i)
+         ("/[Gmail].Sent Mail"   . ?s)
+         ("/[Gmail].Trash"       . ?t)
+         ("/[Gmail].All Mail"    . ?a)))
+
+  ;; allow for updating mail using 'U' in the main view:
+  (setq mu4e-get-mail-command "offlineimap")
+
+  ;; something about ourselves
+  (setq
+     user-mail-address "jgraham20@gmail.com"
+     user-full-name  "Jason Graham"
+     mu4e-compose-signature
+      (concat
+        "Jason Graham\n"
+        "--\n"))
+
+  (require 'smtpmail)
+  (setq message-send-mail-function 'smtpmail-send-it
+     starttls-use-gnutls t
+     smtpmail-starttls-credentials '(("smtp.gmail.com" 587 nil nil))
+     smtpmail-auth-credentials
+       '(("smtp.gmail.com" 587 "jgraham20@gmail.com" nil))
+     smtpmail-default-smtp-server "smtp.gmail.com"
+     smtpmail-smtp-server "smtp.gmail.com"
+     smtpmail-smtp-service 587)
+
+  ;; don't keep message buffers around
+  (setq message-kill-buffer-on-exit t))
 
 ;;;; Windows-pytest
-
 (defun module/python/windows-pytest ()
   "Pytest is broken on Windows. Basic functionality is provided for Windows."
 
@@ -1623,8 +1684,7 @@ Can explore icons by evaluating eg.: (all-the-icons-insert-icons-for 'material)
   (spacemacs/set-leader-keys-for-major-mode
     'python-mode (kbd "t t") 'ek-pytest-one))
 
-;;;; Fixes
-
+;;;; Python Fixes
 (defun module/python/fixes ()
   "Various python bugfixes."
 
@@ -1647,7 +1707,6 @@ Can explore icons by evaluating eg.: (all-the-icons-insert-icons-for 'material)
     (add-hook hook (lambda () (flyspell-mode -1)))))
 
 ;;;; Mypy
-
 (defun module/python/mypy ()
   "Enable mypy flycheck integration in-tandem with pylint."
 
@@ -1665,7 +1724,6 @@ Can explore icons by evaluating eg.: (all-the-icons-insert-icons-for 'material)
   (flycheck-add-next-checker 'python-pylint 'python-mypy t))
 
 ;;;; Venvs
-
 (defun module/python/venvs ()
   "Initialize virtual environment management for Python."
 
@@ -1679,7 +1737,6 @@ Can explore icons by evaluating eg.: (all-the-icons-insert-icons-for 'material)
   (venv-initialize-eshell))
 
 ;;; Blog  FIXME
-
 (defun module/blog ()
 
   (setq blog-dir "~/dev/blog"
@@ -1722,24 +1779,3 @@ Can explore icons by evaluating eg.: (all-the-icons-insert-icons-for 'material)
   (spacemacs/set-leader-keys (kbd "ab") 'deploy-blog)
   (spacemacs/set-leader-keys (kbd "aa") 'start-blog-server)
   (spacemacs/set-leader-keys (kbd "ae") 'end-blog-server))
-
-(defun dotspacemacs/emacs-custom-settings ()
-  "Emacs custom settings.
-This is an auto-generated function, do not modify its content directly, use
-Emacs customize menu instead.
-This function is called at the very end of Spacemacs initialization."
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(package-selected-packages
-   (quote
-    (sunshine yapfify xterm-color xkcd ws-butler winum which-key web-beautify volatile-highlights virtualenvwrapper vi-tilde-fringe uuidgen use-package unfill toc-org symon sublimity string-inflection spotify spaceline smeargle shell-pop sayid reveal-in-osx-finder restclient-helm restart-emacs ranger rainbow-mode rainbow-identifiers rainbow-delimiters pyvenv pytest pyenv-mode py-isort popwin pip-requirements persp-mode pcre2el pbcopy password-generator paradox osx-trash osx-dictionary orgit org-vcard org-sticky-header org-projectile org-present org-pomodoro org-gcal org-download org-bullets open-junk-file ob-restclient ob-http neotree navi-mode mwim multi-term move-text mmm-mode mic-paren markdown-toc magithub magit-gitflow magit-gh-pulls macrostep lorem-ipsum livid-mode live-py-mode lispy linum-relative link-hint launchctl json-mode js2-refactor js-doc intero info+ indent-guide ibuffer-projectile hy-mode hungry-delete htmlize hlint-refactor hl-todo hindent highlight-numbers highlight-indentation hide-comnt help-fns+ helm-themes helm-swoop helm-spotify helm-pydoc helm-purpose helm-projectile helm-mode-manager helm-make helm-hoogle helm-gitignore helm-flx helm-descbinds helm-company helm-c-yasnippet helm-ag haskell-snippets google-translate golden-ratio gnuplot github-search github-clone gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link git-gutter-fringe git-gutter-fringe+ gist gh-md fuzzy forecast flx-ido fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-snipe evil-search-highlight-persist evil-org evil-numbers evil-mc evil-matchit evil-magit evil-lisp-state evil-lion evil-indent-plus evil-iedit-state evil-exchange evil-escape evil-ediff evil-commentary evil-args evil-anzu eshell-z eshell-prompt-extras esh-help elisp-slime-nav editorconfig dumb-jump diff-hl deft dante cython-mode company-tern company-statistics company-restclient company-ghci company-ghc company-cabal company-anaconda column-enforce-mode color-theme-sanityinc-solarized color-identifiers-mode coffee-mode cmm-mode clojure-snippets clj-refactor clean-aindent-mode cider-eval-sexp-fu calfw browse-at-remote auto-yasnippet auto-highlight-symbol auto-compile aggressive-indent adaptive-wrap ace-link ace-jump-helm-line ac-ispell))))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
-)
