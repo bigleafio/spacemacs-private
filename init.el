@@ -4,14 +4,6 @@
 ;; It must be stored in your home directory.
 ;; Utilities for integrating Windows and Linux.
 
-; (setq is-linuxp (eq system-type 'gnu/linux))
-; (setq is-linuxp t)
-; (defun if-linux (x y) (if is-linuxp x y))
-; (defun if-linux-call (x y) (if is-linuxp (funcall x) (funcall y)))
-; (defun when-linux (x) (when is-linuxp x))
-; (defun when-linux-call (x) (when is-linuxp (funcall x)))
-; (defun unless-linux (x) (unless is-linuxp x))
-; (defun unless-linux-call (x) (unless is-linuxp (funcall x)))
 
 (defun dotspacemacs/layers ()
   "Configuration Layers declaration.
@@ -531,16 +523,26 @@ you should place your code here."
   (setq org-tag-alist (quote ((:startgroup)
                               ("@errand" . ?e)
                               ("@office" . ?o)
-                              ("@home" . ?H)
+                              ("@home" . ?h)
+                              ("@writing" . ?w)
+                              ("@errands" . ?e)
+                              ("@drawing" . ?d)
+                              ("@coding" . ?c)
+                              ("kaizen" . ?k)
+                              ("@phone" . ?p)
+                              ("@reading" . ?r)
+                              ("@computer" . ?l)
+                              ("quantified" . ?q)
+                              ("fuzzy" . ?0)
+                              ("highenergy" . ?1)
                               (:endgroup)
-                              ("WAITING" . ?w)
-                              ("HOLD" . ?h)
-                              ("IDEA" . ?i)
+                              ("WAITING" . ?W)
+                              ("HOLD" . ?H)
+                              ("IDEA" . ?I)
                               ("PERSONAL" . ?P)
                               ("DRAFT" . ?D)
-                              ("WORK" . ?W)
-                              ("NOTE" . ?n)
-                              ("CANCELLED" . ?c)
+                              ("NOTE" . ?N)
+                              ("CANCELLED" . ?C)
                               ("FLAGGED" . ??))))
 
 
@@ -612,6 +614,20 @@ you should place your code here."
     (setq org-refile-use-cache nil)
     (setq org-refile-targets '((org-agenda-files . (:maxlevel . 3))))
     (setq org-blank-before-new-entry nil)
+
+    ;; Time Tracking
+    (setq org-expiry-inactive-timestamps t)
+    (setq org-clock-idle-time nil)
+    (setq org-log-done 'time)
+    (setq org-clock-continuously nil)
+    (setq org-clock-persist t)
+    (setq org-clock-in-switch-to-state "STARTED")
+    (setq org-clock-in-resume nil)
+    (setq org-show-notification-handler 'message)
+    (setq org-clock-report-include-clocking-task t)
+    (setq org-log-into-drawer "LOGBOOK")
+    (setq org-clock-into-drawer 1)
+
     )
 
 ;;;; Prettify-magit
@@ -991,7 +1007,7 @@ Captured %<%Y-%m-%d %H:%M>
            "* STARTED %^{Task}"
            :clock-in :clock-resume)
           ("e" "Emacs idea" entry
-           (file+headline "~/code/emacs-notes/tasks.org" "Emacs")
+           (file+headline "~/Notes/org/tasks.org" "Emacs")
            "* TODO %^{Task}"
            :immediate-finish t)
           ("E" "Energy" table-line
@@ -1056,42 +1072,6 @@ Captured %<%Y-%m-%d %H:%M>
             "* %?\n\n%i\n%U\n"
             )))
   (bind-key "C-M-r" 'org-capture)
-;   (setq org-capture-templates
-;         (quote (("w" "Add Work Task" entry
-;       (file+headline "~/notes/org/todo.org" "Inbox")
-;       "* TODO %? \n:SCHEDULED: %t \n:PROPERTIES:
-; :CLIENT: \n:TICKET:
-; :ID:       %(shell-command-to-string \"uuidgen\"):CREATED:  %U
-; :END:" :prepend t)
-;                ("t" "todo" entry (file org-default-notes-file)
-;                  "* TODO %?\n%U\n%a
-; :ID:       %(shell-command-to-string \"uuidgen\")
-; :CREATED:  %U
-; :END:" :prepend t)
-;                 ("m" "meeting" entry (file org-default-notes-file)
-; "* MEETING with %? :MEETING:\n%U
-; :ID:       %(shell-command-to-string \"uuidgen\")
-; :CREATED:  %U \n:END:" :prepend t)
-;                 ("i" "idea" entry (file org-default-notes-file)
-;                  "* %? :IDEA:\n%U\n%a
-; :ID:       %(shell-command-to-string \"uuidgen\")
-; :CREATED:  %U\n:END:" :prepend t)
-;                 ("n" "note" entry (file org-default-notes-file)
-;                  "* %? :NOTE:\n%U\n%a
-; :ID:       %(shell-command-to-string \"uuidgen\")
-; :CREATED:  %U \n:END:" :prepend t)
-;                 ("h" "habit" entry (file jsg/org-default-notes-file)
-;                  "* NEXT %?\n%U\n%a\nSCHEDULED: %(format-time-string \"%<<%Y-%m-%d %a .+1d/3d>>\")\n:PROPERTIES:\n:STYLE: habit\n:REPEAT_TO_STATE: NEXT\n
-; :END:" :prepend t)
-;      ("c" "Calendar" entry
-;       (file+headline "~/notes/org/todo.org" "Inbox")
-;       "* APPT %? \n:SCHEDULED: %t
-; :PROPERTIES: \n:ID:       %(shell-command-to-string \"uuidgen\")
-; :CREATED:  %U \n:END:" :prepend t)
-;       ("J" "Journal entry with date" plain
-;          (file+datetree+prompt "~/notes/org/journal.org")
-;          "%K - %a\n%i\n%?\n"
-;          :unnarrowed t))))
 
   "Org-babel template code-block expansions."
 
