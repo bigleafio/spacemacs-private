@@ -55,6 +55,7 @@ values."
              python-test-runner 'pytest)
 
      gnus
+     c-c++
      mu4e
      emacs-lisp
      deft
@@ -74,7 +75,9 @@ values."
                  restclient-use-org t)
      spotify
      (shell :variables
-             shell-default-shell 'eshell)
+            shell-default-shell 'multi-term
+            shell-default-height 30
+            shell-default-position 'bottom)
      (version-control :variables
                       version-control-global-margin t
                       version-control-diff-tool 'git-gutter+)
@@ -419,14 +422,14 @@ you should place your code here."
   (menu-bar-mode 1)
 
   (setq projectile-indexing-method 'native)
-
+  (setq multi-term-program "/usr/bin/zsh")
   (if (memq window-system '(w32))
     'module/system/w32)
 
   (module/misc/gnus)
   (module/misc/mail)
   (module/configure-magit)
-  (module/configure-eshell)
+  ;;(module/configure-eshell)
   (module/org)
 
   (module/configure-navi-mode)
