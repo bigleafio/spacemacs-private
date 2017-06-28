@@ -997,6 +997,17 @@ Captured %<%Y-%m-%d %H:%M>
 
 %i
 " "Basic task data")
+  (defvar my/org-basic-work-task-template "* TODO %^{Task}
+:PROPERTIES:
+:Client:
+:Ticket:
+:END:
+Captured %<%Y-%m-%d %H:%M>
+%?
+
+%i\"
+" "Basic task data")
+
   (setq org-capture-templates
         `(("t" "Tasks" entry
            (file+headline "~/Notes/org/organizer.org" "Inbox")
@@ -1009,8 +1020,8 @@ Captured %<%Y-%m-%d %H:%M>
            (file+headline "~/Notes/org/organizer.org" "Inbox")
            "* STARTED %^{Task}"
            :clock-in :clock-resume)
-          ("e" "Emacs idea" entry
-           (file+headline "~/Notes/org/tasks.org" "Emacs")
+          ("e" "Idea" entry
+           (file+headline "~/Notes/org/tasks.org" "Idea")
            "* TODO %^{Task}"
            :immediate-finish t)
           ("E" "Energy" table-line
@@ -1018,9 +1029,9 @@ Captured %<%Y-%m-%d %H:%M>
            "| %U | %^{Energy 5-awesome 3-fuzzy 1-zzz} | %^{Note} |"
            :immediate-finish t
            )
-          ("b" "Business task" entry
-           (file+headline "~/Notes/org/business.org" "Tasks")
-           ,my/org-basic-task-template)
+          ("w" "Work task" entry
+           (file+headline "~/Notes/org/organizer.org" "Tasks")
+           ,my/org-basic-work-task-template)
           ("p" "People task" entry
            (file+headline "~/Notes/org/people.org" "Tasks")
            ,my/org-basic-task-template)
