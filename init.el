@@ -33,31 +33,26 @@ values."
    dotspacemacs-configuration-layer-path '()
    ;; List of configuration layers to load.
    dotspacemacs-configuration-layers
-   '(
+   '(javascript
      helm
      evil-commentary
      (evil-snipe :variables
                     evil-snipe-enable-alternate-f-and-t-behaviors t)
-     ;;(ivy :variables
-     ;;        ivy-extra-directories nil)
-
-    (auto-completion :variables
+     (auto-completion :variables
                          auto-completion-return-key-behavior 'complete
                          auto-completion-tab-key-behavior 'complete
                          auto-completion-enable-snippets-in-popup t)
      (ibuffer :variables ibuffer-group-buffers-by 'projects)
      (clojure :variables
               clojure-enable-fancify-symbols nil)
-     (haskell :variables
-              haskell-completion-backend 'intero)
      (python :variables
              python-sort-imports-on-save t
              python-test-runner 'pytest)
 
-     gnus
-     c-c++
-     mu4e
      emacs-lisp
+     evernote
+     spotify
+     twitter
      deft
      osx
      ranger
@@ -67,13 +62,11 @@ values."
      version-control
      markdown
      org
-     theming
-     ;;themes-megapack
      (colors :variables
               colors-enable-nyan-cat-progress-bar t )
      (restclient :variables
                  restclient-use-org t)
-     spotify
+     ;; spotify
      (shell :variables
             shell-default-shell 'multi-term
             shell-default-height 30
@@ -81,29 +74,28 @@ values."
      (version-control :variables
                       version-control-global-margin t
                       version-control-diff-tool 'git-gutter+)
-
-     xkcd
-     javascript
+     ;; xkcd
      )
    ;; List of additional packages that will be installed without being
    ;; wrapped in a layer. If you need some configuration for these
    ;; packages, then consider creating a layer. You can also put the
    ;; configuration in `dotspacemacs/user-config'.
-   dotspacemacs-additional-packages '(sublimity
+   dotspacemacs-additional-packages '(
+                                      ;;sublimity
                                       mic-paren
-                                      color-theme-sanityinc-solarized
-                                      org-sticky-header
-                                      org-plus-contrib
-                                      org-gcal
-                                      calfw
-                                      clipmon
+                                      solarized-theme
+                                      ;; org-sticky-header
+                                      ;; org-plus-contrib
+                                      ;; org-gcal
+                                      ;; calfw
+                                      beacon
+                                      smart-mode-line
                                       lispy
-                                      outshine                 ; Required for navi-mode
-                                      navi-mode                ; Navbar on buffer outlines
-                                      sunshine
-
+                                      ;; sunshine
+                                      4clojure
                                       ;; Org
-                                      org-vcard                ; Import/export google contacts
+                                      ;; org-vcard                ; Import/export google contacts
+                                      org-projectile
                                       undo-tree
                                       ;; Misc
                                       ;;helm-spotify-plus        ; Spotify improvements
@@ -113,7 +105,7 @@ values."
    ;; A list of packages that cannot be updated.
    dotspacemacs-frozen-packages '()
    ;; A list of packages that will not be installed and loaded.
-   dotspacemacs-excluded-packages '(highlight-parentheses)
+   dotspacemacs-excluded-packages '(spaceline)
    ;; Defines the behaviour of Spacemacs when installing packages.
    ;; Possible values are `used-only', `used-but-keep-unused' and `all'.
    ;; `used-only' installs only explicitly used packages and uninstall any
@@ -138,7 +130,7 @@ values."
    ;; This variable has no effect if Emacs is launched with the parameter
    ;; `--insecure' which forces the value of this variable to nil.
    ;; (default t)
-   dotspacemacs-elpa-https t
+   dotspacemacs-elpa-https nil
    ;; Maximum allowed time in seconds to contact an ELPA repository.
    dotspacemacs-elpa-timeout 5
    ;; If non nil then spacemacs will check for updates at startup
@@ -179,11 +171,11 @@ values."
    ;; True if the home buffer should respond to resize events.
    dotspacemacs-startup-buffer-responsive t
    ;; Default major mode of the scratch buffer (default `text-mode')
-   dotspacemacs-scratch-mode 'org-mode
+   dotspacemacs-scratch-mode 'text-mode
    ;; List of themes, the first of the list is loaded when spacemacs starts.
    ;; Press <SPC> T n to cycle to the next theme in the list (works great
    ;; with 2 themes variants, one dark and one light)
-   dotspacemacs-themes '(sanityinc-solarized-light
+   dotspacemacs-themes '(solarized-light
                          leuven)
 
    dotspacemacs-colorize-cursor-according-to-state t
@@ -197,7 +189,7 @@ values."
    ;; The leader key
    dotspacemacs-leader-key "SPC"
    ;; The key used for Emacs commands (M-x) (after pressing on the leader key).
-   ;; (default "SPC")
+ ;; (default "SPC")
    dotspacemacs-emacs-command-key "SPC"
    ;; The key used for Vim Ex commands (default              dotspacemacs-ex-command-key ":"
    ;; The leader key accessible in `emacs state' and `insert state'
@@ -367,11 +359,10 @@ explicitly specified that a variable should be set before a package is loaded,
 you should place your code here."
 
   (setq custom-file "~/.emacs.d/private/.custom-settings.el")
-
-  (epa-file-enable)
+  (setq sml/no-confirm-load-theme t)
+  (sml/setup)
+  (beacon-mode 1)
   (setq epa-file-encrypt-to '("jgraham20@gmail.com"))
-
-  (module/configure-theme)
 
   (setq user-full-name "Jason Graham"
         user-mail-address "jgraham20@gmail.com")
@@ -380,7 +371,7 @@ you should place your code here."
 
   ;; Add a directory to our load path so that when you `load` things
   ;; below, Emacs knows where to look for the corresponding file.
-  (add-to-list 'load-path "~/.spacemacs.d/local/")
+  ;;(add-to-list 'load-path "~/.spacemacs.d/local/")
   (add-to-list 'load-path "~/Dropbox/.secret/secret.el")
 
   (load "~/Dropbox/.secret/secret.el")
@@ -402,7 +393,7 @@ you should place your code here."
         try-complete-lisp-symbol-partially
         try-complete-lisp-symbol))
 
-  (run-with-idle-timer 300 t 'jump-to-org-agenda)
+  (setq cider-repl-display-help-banner nil)
 
   ;; yasnippet
   ;; http://www.emacswiki.org/emacs/Yasnippet
@@ -426,16 +417,49 @@ you should place your code here."
   (if (memq window-system '(w32))
     'module/system/w32)
 
-  (module/misc/gnus)
-  (module/misc/mail)
+  (setq neo-smart-open t)
+  (setq projectile-switch-project-action 'neotree-projectile-action)
+
+  ;; (module/misc/gnus)
+  ;; (module/misc/mail)
   (module/configure-magit)
-  ;;(module/configure-eshell)
+  (module/configure-eshell)
   (module/org)
 
-  (module/configure-navi-mode)
-  (module/configure-outshine)
-
 )
+
+(defun endless/4clojure-check-and-proceed ()
+  "Check the answer and show the next question if it worked."
+  (interactive)
+  (unless
+      (save-excursion
+        ;; Find last sexp (the answer).
+        (goto-char (point-max))
+        (forward-sexp -1)
+        ;; Check the answer.
+        (cl-letf ((answer
+                   (buffer-substring (point) (point-max)))
+                  ;; Preserve buffer contents, in case you failed.
+                  ((buffer-string)))
+          (goto-char (point-min))
+          (while (search-forward "__" nil t)
+            (replace-match answer))
+          (string-match "failed." (4clojure-check-answers))))
+    (4clojure-next-question)))
+
+(defadvice 4clojure/start-new-problem
+    (after endless/4clojure/start-new-problem-advice () activate)
+  ;; Prettify the 4clojure buffer.
+  (goto-char (point-min))
+  (forward-line 2)
+  (forward-char 3)
+  (fill-paragraph)
+  ;; Position point for the answer
+  (goto-char (point-max))
+  (insert "\n\n\n")
+  (forward-char -1)
+  ;; Define our key.
+  (local-set-key (kbd "M-j") #'endless/4clojure-check-and-proceed))
 
 ;;;; W32 Settings
 (defun module/system/w32 ()
@@ -468,8 +492,6 @@ you should place your code here."
                       org-toc))
 
     (module/org/babel)
-    ;;(module/org/exports)
-    ;;(module/org/gcal)
     (module/org/misc)
     (module/org/templates)
     (module/org/weekly-review)
@@ -491,7 +513,7 @@ you should place your code here."
   (setq org-blank-before-new-entry '((heading . t) (plain-list-item . nil)))
   (setq org-agenda-file-regexp "\\`[^.].*\\.\\(org\\.txt\\|org\\)\\'")
   (setq org-clock-idle-time 15)
-  (setq org-ellipsis " ▼") ;; http://endlessparentheses.com/changing-the-org-mode-ellipsis.html
+  ;; (setq org-ellipsis " ▼") ;; http://endlessparentheses.com/changing-the-org-mode-ellipsis.html
 
   ;; todos
   (setq org-todo-keywords
@@ -512,9 +534,9 @@ you should place your code here."
       (setq jsg/home-dir "C:/Users/jg186074")
       (setq jsg/home-dir (expand-file-name "~")))
 
-  (setq org-directory "~/Notes/org/")
-  (setq org-default-notes-file "~/Notes/org/organizer.org")
-  (setq jsg/org-default-habits-file "~/Notes/org/habits.org")
+  (setq org-directory "~/Notes/")
+  (setq org-default-notes-file "~/Notes/organizer.org")
+  (setq jsg/org-default-habits-file "~/Notes/habits.org")
 
   ;; agenda
   (setq org-agenda-files (list org-directory))
@@ -523,7 +545,8 @@ you should place your code here."
 
   ;; tags
   ;; Tags with fast selection keys
-  (setq org-tag-alist (quote ((:startgroup)
+  (setq org-tag-alist (quote ((:startgroup)** Ignore Tableu tickets in queue.
+                              ** Windows AD gives access to all machines.
                               ("@errand" . ?e)
                               ("@office" . ?o)
                               ("@home" . ?h)
@@ -548,7 +571,6 @@ you should place your code here."
                               ("CANCELLED" . ?C)
                               ("FLAGGED" . ??))))
 
-
     ;; refiling
     (setq org-refile-targets (quote ((nil :maxlevel . 9)
                                      (org-agenda-files :maxlevel . 9))))
@@ -560,12 +582,8 @@ you should place your code here."
 
     '(org-agenda-files
      (quote
-       ("~/Notes/org/todo.org"
-        "~/Notes/org/habits.org"
-        "~/Notes/org/inbox.org"
-        "~/Notes/org/church.org"
-        "~/Notes/org/journal.org"
-        "~/Notes/org/goals.org")))
+       ("~/Notes/church.org"
+        "~/Notes/organizer.org")))
 
     (setq org-agenda-text-search-extra-files '(agenda-archives))
 
@@ -753,159 +771,6 @@ you should place your code here."
 
   (setq eshell-prompt-function 'esh-prompt-function))
 
-(defun module/configure-navi-mode ()
-  "Navi mode bar vim bindings and improvements."
-
-  (require 'navi-mode)
-
-  (add-to-list 'navi-key-mappings
-               '("python" .
-                 ((:FUN . "f")
-                  (:OBJ . "x"))))
-  (add-to-list 'navi-keywords
-               '("python" .
-                 ((:FUN . "\\(^[ ]*def[a-zA-Z0-9_ ]*\\|^[ ]*class[a-zA-Z0-9_ ]*\\)")
-                  (:OBJ . "^[ ]*\\(class[a-zA-Z0-9_ ]*\\)"))))
-
-  (defun my-outline-show-context ()
-    "Helper utility for evil navi bindings."
-    (interactive)
-    (outline-show-entry)
-    (outline-show-branches))
-
-  (let ((map (make-sparse-keymap)))
-    ;; Cycle Navi
-    (define-key map (kbd "TAB") 'navi-cycle-subtree)
-    (define-key map (kbd "<backtab>") 'navi-cycle-buffer)
-    ;; Modify subtree hierarchy
-    (define-key map (kbd "M-h") 'navi-promote-subtree)
-    (define-key map (kbd "M-j") 'navi-move-down-subtree)
-    (define-key map (kbd "M-k") 'navi-move-up-subtree)
-    (define-key map (kbd "M-l") 'navi-demote-subtree)
-    ;; another way to exit
-    (define-key map (kbd "M-n") 'spacemacs/delete-window)
-
-    ;; Custom vim bindings for navi-mode
-    ;; Also fixes various bugs related to narrowing/context/scrolling
-    (evil-define-key '(normal visual motion) map
-      "f" (lambda () (interactive) (navi-generic-command ?f current-prefix-arg))
-      "v" (lambda () (interactive) (navi-generic-command ?v current-prefix-arg))
-      "x" (lambda () (interactive) (navi-generic-command ?x current-prefix-arg))
-      "a" (lambda () (interactive) (navi-generic-command ?a current-prefix-arg))
-
-      "1" (lambda () (interactive) (navi-generic-command ?1 current-prefix-arg))
-      "2" (lambda () (interactive) (navi-generic-command ?2 current-prefix-arg))
-      "3" (lambda () (interactive) (navi-generic-command ?3 current-prefix-arg))
-      "4" (lambda () (interactive) (navi-generic-command ?4 current-prefix-arg))
-
-      ;; Narrow on occurrence
-      "n" (lambda () (interactive)
-            (navi-narrow-to-thing-at-point)
-            (other-window 1)
-            (my-outline-show-context)
-            (other-window 1))
-      ;; Open occurence but do not goto
-      "d" (lambda () (interactive)
-            (occur-mode-display-occurrence)
-            (other-window 1)
-            (my-outline-show-context)
-            (recenter 3)
-            (other-window 1))
-      ;; Open and goto occurrence. Capital for closing navi
-      "o" (lambda () (interactive)
-            (navi-goto-occurrence-other-window)
-            (my-outline-show-context)
-            (recenter 3))
-      "O" (lambda () (interactive)
-            (navi-goto-occurrence-other-window)
-            (delete-other-windows)
-            (my-outline-show-context)
-            (recenter 3))
-      ;; Exit Navi
-      "q" 'spacemacs/delete-window
-      ;; Widen narrowed navi buffer
-      "w" 'navi-widen
-      ;; Undo modifications to headers done within navi buffer
-      "u" 'navi-undo)
-
-    (setq navi-mode-map map)))
-
-;;;; Outshine-mode
-(defun module/configure-outshine ()
-  "Outline/Outshine mode bindings and Navi integration."
-
-  (require 'outshine)
-
-  (defun my-outshine-navi ()
-    "Enhanced narrowing and popwin-like functionality to start navi mode."
-    (interactive)
-    (let ((line nil))
-      (widen)  ; Otherwise broken on narrowed buffers
-      (save-excursion
-        (unless (outline-on-heading-p t)
-          (outline-previous-visible-heading 1))
-        (setq line
-              (replace-regexp-in-string "\n$" ""
-                                        (thing-at-point 'line t))))
-      ;; window stuff
-      (split-window-below)
-      (outshine-navi)
-      (evil-window-move-far-left)
-      (shrink-window-horizontally (- (window-width) 35))
-      ;; default to 3 heading levels
-      (navi-generic-command ?3 nil)
-      (search-forward-regexp line)))
-
-  (define-key org-mode-map (kbd "M-n") 'my-outshine-navi)
-
-  ;; Outline minor mode vim keybindings
-  (let ((map outline-minor-mode-map))
-    ;; Core functions
-    (define-key map (kbd "M-n") 'my-outshine-navi)
-    (define-key map (kbd "<backtab>") 'outshine-cycle-buffer)
-    (define-key map (kbd "M-h") 'outline-promote)
-    (define-key map (kbd "M-l") 'outline-demote)
-
-    ;; Insert Heading
-    (define-key map (kbd "M-RET") 'outshine-insert-heading)
-    ;; Insert Subheading
-    (define-key map (kbd "C-M-<return>")
-      (lambda ()
-        (interactive)
-        (let ((line nil) (str nil))
-          (save-excursion
-            (outline-previous-visible-heading 1)
-            (setq level (outshine-calc-outline-level))
-            (setq str (outshine-calc-outline-string-at-level (+ 1 level))))
-          (evil-unimpaired/insert-space-below 1)
-          (evil-next-line 1)
-          (insert str))))
-
-    ;; Bring org-mode g-based evil navigation to outline-minor-mode
-    (evil-define-key '(normal visual motion) map
-      "gh" 'outline-up-heading
-      "gj" 'outline-forward-same-level
-      "gk" 'outline-backward-same-level
-      "gl" 'outline-next-visible-heading
-      "gu" 'outline-previous-visible-heading
-
-      ;; Narrows buffer without needing to have cursor on heading
-      (kbd "SPC n n") (lambda ()
-                        (interactive)
-                        (save-excursion
-                          (unless (outline-on-heading-p t)
-                            (outline-previous-visible-heading 1))
-                          (outshine-narrow-to-subtree)))
-      (kbd "SPC n j") 'outline-move-subtree-down
-      (kbd "SPC n k") 'outline-move-subtree-up))
-
-  (setq outshine-use-speed-commands t)
-
-  ;; Required for outshine
-  (add-hook 'outline-minor-mode-hook 'outshine-hook-function)
-  ;; Enables outline-minor-mode for *ALL* programming buffers!
-  (add-hook 'prog-mode-hook 'outline-minor-mode))
-
 ;;;; Babel
 (defun module/org/babel ()
   "Org babel languages and config."
@@ -928,12 +793,11 @@ you should place your code here."
 (defun module/org/mobile ()
 
     (setq org-mobile-directory "~/Dropbox/Apps/MobileOrg")
-    (setq org-mobile-inbox-for-pull "~/Notes/org/mobileorg.org")
+    (setq org-mobile-inbox-for-pull "~/Notes/mobileorg.org")
     (setq default-buffer-file-coding-system 'utf-8)
-    (setq org-mobile-files '("~/Notes/org/organizer.org"
-                             "~/Notes/org/work.org"
-                             "~/Notes/org/books.org"
-                             "~/Notes/org/todo.org"))
+    (setq org-mobile-files '("~/Notes/organizer.org"
+                             "~/Notes/church.org"
+                             "~/Notes/todo.org"))
     (setq org-mobile-agendas '("a"))
 )
 
@@ -1010,58 +874,58 @@ Captured %<%Y-%m-%d %H:%M>
 
   (setq org-capture-templates
         `(("t" "Tasks" entry
-           (file+headline "~/Notes/org/organizer.org" "Inbox")
+           (file+headline "~/Notes/organizer.org" "Inbox")
            ,my/org-basic-task-template)
           ("T" "Quick task" entry
-           (file+headline "~/Notes/org/organizer.org" "Inbox")
+           (file+headline "~/Notes/organizer.org" "Inbox")
            "* TODO %^{Task}\nSCHEDULED: %t\n"
            :immediate-finish t)
           ("i" "Interrupting task" entry
-           (file+headline "~/Notes/org/organizer.org" "Inbox")
+           (file+headline "~/Notes/organizer.org" "Inbox")
            "* STARTED %^{Task}"
            :clock-in :clock-resume)
           ("e" "Idea" entry
-           (file+headline "~/Notes/org/tasks.org" "Idea")
+           (file+headline "~/Notes/tasks.org" "Idea")
            "* TODO %^{Task}"
            :immediate-finish t)
           ("E" "Energy" table-line
-           (file+headline "~/Notes/org/organizer.org" "Track energy")
+           (file+headline "~/Notes/organizer.org" "Track energy")
            "| %U | %^{Energy 5-awesome 3-fuzzy 1-zzz} | %^{Note} |"
            :immediate-finish t
            )
           ("w" "Work task" entry
-           (file+headline "~/Notes/org/organizer.org" "Tasks")
+           (file+headline "~/Notes/organizer.org" "Tasks")
            ,my/org-basic-work-task-template)
-          ("p" "People task" entry
-           (file+headline "~/Notes/org/people.org" "Tasks")
+          ("p" "People task" entr
+           (file+headline "~/Notes/people.org" "Tasks")
            ,my/org-basic-task-template)
           ("j" "Journal entry" plain
-           (file+datetree "~/Notes/org/journal.org")
+           (file+datetree "~/Notes/journal.org")
            "%K - %a\n%i\n%?\n"
            :unnarrowed t)
           ("J" "Journal entry with date" plain
-           (file+datetree+prompt "~/Notes/org/journal.org")
+           (file+datetree+prompt "~/Notes/journal.org")
            "%K - %a\n%i\n%?\n"
            :unnarrowed t)
           ("s" "Journal entry with date, scheduled" entry
-           (file+datetree+prompt "~/Notes/org/journal.org")
+           (file+datetree+prompt "~/Notes/journal.org")
            "* \n%K - %a\n%t\t%i\n%?\n"
            :unnarrowed t)
           ("c" "Protocol Link" entry (file+headline ,org-default-notes-file "Inbox")
            "* [[%:link][%:description]] \n\n#+BEGIN_QUOTE\n%i\n#+END_QUOTE\n\n%?\n\nCaptured: %U")
           ("db" "Done - Business" entry
-           (file+headline "~/Notes/org/business.org" "Tasks")
+           (file+headline "~/Notes/business.org" "Tasks")
            "* DONE %^{Task}\nSCHEDULED: %^t\n%?")
           ("dp" "Done - People" entry
-           (file+headline "~/Notes/org/people.org" "Tasks")
+           (file+headline "~/Notes/people.org" "Tasks")
            "* DONE %^{Task}\nSCHEDULED: %^t\n%?")
           ("dt" "Done - Task" entry
-           (file+headline "~/Notes/org/organizer.org" "Inbox")
+           (file+headline "~/Notes/organizer.org" "Inbox")
            "* DONE %^{Task}\nSCHEDULED: %^t\n%?")
           ("q" "Quick note" item
-           (file+headline "~/Notes/org/organizer.org" "Quick notes"))
+           (file+headline "~/Notes/organizer.org" "Quick notes"))
           ("B" "Book" entry
-           (file+datetree "~/Notes/org/books.org" "Inbox")
+           (file+datetree "~/Notes/books.org" "Inbox")
            "* %^{Title}  %^g
   %i
   *Author(s):* %^{Author} \\\\
@@ -1073,16 +937,16 @@ Captured %<%Y-%m-%d %H:%M>
   %a
   %U"
            :clock-in :clock-resume)
-           ("C" "Contact" entry (file "~/Notes/org/contacts.org")
+           ("C" "Contact" entry (file "~/Notes/contacts.org")
             "* %(org-contacts-template-name)
   :PROPERTIES:
   :EMAIL: %(my/org-contacts-template-email)
   :END:")
-           ("n" "Daily note" table-line (file+olp "~/Notes/org/organizer.org" "Inbox")
+           ("n" "Daily note" table-line (file+olp "~/Notes/organizer.org" "Inbox")
             "| %u | %^{Note} |"
             :immediate-finish t)
            ("r" "Notes" entry
-            (file+datetree "~/Notes/org/organizer.org")
+            (file+datetree "~/Notes/organizer.org")
             "* %?\n\n%i\n%U\n"
             )))
   (bind-key "C-M-r" 'org-capture)
@@ -1394,7 +1258,7 @@ Captured %<%Y-%m-%d %H:%M>
         (org-insert-heading)
         (insert "[ ] " task)
         (let ((org-capture-entry '("t" "Tasks" entry
-                                   (file+headline "~/Notes/org/organizer.org" "Tasks")
+                                   (file+headline "~/Notes/organizer.org" "Tasks")
                                    "")))
           (org-capture nil "t")
           (insert "TODO " task "\nSCHEDULED: <" (org-read-date) ">")))
