@@ -87,7 +87,11 @@ values."
                                       ;; org-sticky-header
                                       ;; org-plus-contrib
                                       ;; org-gcal
+                                      org-ref
                                       ;; calfw
+                                      yasnippet-snippets
+                                      interleave
+                                      helm-bibtex
                                       beacon
                                       smart-mode-line
                                       lispy
@@ -397,7 +401,30 @@ you should place your code here."
 
   ;; yasnippet
   ;; http://www.emacswiki.org/emacs/Yasnippet
-  (yas-global-mode 1)
+  (setq yas-snippet-dirs
+        '("~/.spacemacs.d/snippets"                 ;; personal snippets
+          ))
+
+  (yas-global-mode 1) ;; or M-x yas-reload-all if you've started YASnippet already.
+
+  (setq reftex-default-bibliography '("~/Notes/references/references.bib"))
+
+  ;; see org-ref for use of these variables
+  (setq org-ref-bibliography-notes "~/Notes/references/notes.org"
+        org-ref-default-bibliography '("~/Notes/references/references.bib")
+        org-ref-pdf-directory "~/Notes/references/pdfs/")
+
+  (setq bibtex-completion-bibliography "~/Notes/references/references.bib"
+        bibtex-completion-library-path "~/Notes/references/pdfs/"
+        bibtex-completion-notes-path "~/Notes/references/helm-bibtex-notes")
+
+  ;; open pdf with system pdf viewer (works on mac)
+  (setq bibtex-completion-pdf-open-function
+        (lambda (fpath)
+          (start-process "open" "*open*" "open" fpath)))
+
+  ;; alternative
+  ;; (setq bibtex-completion-pdf-open-function 'org-open-file)
 
   ;; yay rainbows!
   (add-hook 'prog-mode-hook #'rainbow-delimiters-mode)
@@ -1637,3 +1664,23 @@ Captured %<%Y-%m-%d %H:%M>
   (spacemacs/set-leader-keys (kbd "ab") 'deploy-blog)
   (spacemacs/set-leader-keys (kbd "aa") 'start-blog-server)
   (spacemacs/set-leader-keys (kbd "ae") 'end-blog-server))
+(defun dotspacemacs/emacs-custom-settings ()
+  "Emacs custom settings.
+This is an auto-generated function, do not modify its content directly, use
+Emacs customize menu instead.
+This function is called at the very end of Spacemacs initialization."
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(package-selected-packages
+   (quote
+    (org-ref pdf-tools key-chord tablist yasnippet-snippets interleave helm-bibtex biblio parsebib biblio-core yapfify xterm-color ws-butler winum which-key web-beautify volatile-highlights virtualenvwrapper vi-tilde-fringe uuidgen use-package unfill twittering-mode toc-org symon string-inflection spotify solarized-theme smeargle smart-mode-line shell-pop sayid reveal-in-osx-finder restclient-helm restart-emacs ranger rainbow-mode rainbow-identifiers rainbow-delimiters pyvenv pytest pyenv-mode py-isort popwin pip-requirements persp-mode pcre2el pbcopy password-generator paradox osx-trash osx-dictionary orgit org-projectile org-present org-pomodoro org-download org-bullets org-brain open-junk-file ob-restclient ob-http neotree mwim multi-term move-text mmm-mode mic-paren markdown-toc magithub magit-gitflow magit-gh-pulls macrostep lorem-ipsum livid-mode live-py-mode lispy linum-relative link-hint launchctl json-mode js2-refactor js-doc info+ indent-guide ibuffer-projectile hy-mode hungry-delete htmlize hl-todo highlight-parentheses highlight-numbers highlight-indentation hide-comnt help-fns+ helm-themes helm-swoop helm-spotify helm-pydoc helm-purpose helm-projectile helm-mode-manager helm-make helm-gitignore helm-flx helm-descbinds helm-company helm-c-yasnippet helm-ag google-translate golden-ratio gnuplot github-search github-clone gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link git-gutter-fringe git-gutter-fringe+ gist gh-md geeknote fuzzy flx-ido fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-snipe evil-search-highlight-persist evil-org evil-numbers evil-mc evil-matchit evil-magit evil-lisp-state evil-lion evil-indent-plus evil-iedit-state evil-exchange evil-escape evil-ediff evil-commentary evil-args evil-anzu eshell-z eshell-prompt-extras esh-help elisp-slime-nav editorconfig dumb-jump diff-hl deft cython-mode company-tern company-statistics company-restclient company-anaconda column-enforce-mode color-identifiers-mode coffee-mode clojure-snippets clj-refactor clean-aindent-mode cider-eval-sexp-fu browse-at-remote beacon auto-yasnippet auto-highlight-symbol auto-compile aggressive-indent adaptive-wrap ace-link ace-jump-helm-line ac-ispell 4clojure))))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
+)

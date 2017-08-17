@@ -1,0 +1,10 @@
+# -*- mode: snippet -*-
+# name : mtgmins
+# key : mtgmins
+#${2:Attendees}
+#
+# contributor: Jason Graham
+# --
+`(org-insert-heading nil)`[`(format-time-string "%Y-%m-%d %a" (current-time))`] ${1:Meeting title}
+    Attendees: Graham,
+`(org-set-property "STYLE" "Meeting minutes")` `(org-set-property "STARTED" (format-time-string "[%Y-%m-%d %H:%M:%S]" (current-time)))`
