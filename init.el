@@ -469,7 +469,7 @@ you should place your code here."
   (local-set-key (kbd "M-j") #'endless/4clojure-check-and-proceed))
 
 (defun jsn/configure-org-mode ()
-  (require 'org-checklist)
+  ;;(require 'org-checklist)
 
   (add-hook 'org-mode-hook 'turn-on-auto-fill)
   (add-hook 'org-mode-hook 'flyspell-mode)
