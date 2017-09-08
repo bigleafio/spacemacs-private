@@ -33,7 +33,7 @@ values."
    ;; List of configuration layers to load.
    dotspacemacs-configuration-layers
    '(
-     ;; helm
+     helm
      evil-commentary
      auto-completion
      (ibuffer :variables ibuffer-group-buffers-by 'projects)
@@ -46,14 +46,14 @@ values."
      evernote
      deft
      osx
-     mu4e
+     ;;mu4e
      better-defaults
      (git :variables git-gutter-use-fringe t)
      github
      markdown
      (org variables: org-enable-github-support nil)
-     ;;(colors :variables
-     ;;         colors-enable-nyan-cat-progress-bar t )
+     (colors :variables
+              colors-enable-nyan-cat-progress-bar t )
      ;;(restclient :variables
      ;;            restclient-use-org t)
      syntax-checking
@@ -72,6 +72,7 @@ values."
                                       org-journal
                                       mic-paren
                                       solarized-theme
+                                      color-theme-sanityinc-tomorrow
                                       yasnippet-snippets
                                       interleave
                                       beacon
@@ -162,7 +163,7 @@ values."
    ;; Default font, or prioritized list of fonts. `powerline-scale' allows to
    ;; quickly tweak the mode-line size to make separators look not too crappy.
    dotspacemacs-default-font '("Source Code Pro"
-                               :size 13
+                               :size 14
                                :weight normal
                                :width normal
                                :powerline-scale 1.0)
@@ -388,7 +389,7 @@ you should place your code here."
   (setq sml/no-confirm-load-theme t)
   (sml/setup)
   (beacon-mode 1)
-
+  (color-theme-sanityinc-tomorrow-night)
   (setq sentence-end-double-space nil)
   (setq vc-follow-symlinks t)
 
@@ -787,3 +788,30 @@ you should place your code here."
   (spacemacs/set-leader-keys (kbd "ab") 'deploy-blog)
   (spacemacs/set-leader-keys (kbd "aa") 'start-blog-server)
   (spacemacs/set-leader-keys (kbd "ae") 'end-blog-server))
+(defun dotspacemacs/emacs-custom-settings ()
+  "Emacs custom settings.
+This is an auto-generated function, do not modify its content directly, use
+Emacs customize menu instead.
+This function is called at the very end of Spacemacs initialization."
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(ansi-color-names-vector
+   ["#0a0814" "#f2241f" "#67b11d" "#b1951d" "#4f97d7" "#a31db1" "#28def0" "#b2b2b2"])
+ '(custom-enabled-themes (quote (sanityinc-tomorrow-night)))
+ '(custom-safe-themes
+   (quote
+    ("06f0b439b62164c6f8f84fdda32b62fb50b6d00e8b01c2208e55543a6337433a" default)))
+ '(evil-want-Y-yank-to-eol nil)
+ '(package-selected-packages
+   (quote
+    (visual-fill-column rich-minority org-category-capture alert log4e gntp markdown-mode zoutline swiper ivy dash-functional parent-mode window-purpose imenu-list projectile gitignore-mode fringe-helper git-gutter+ git-gutter gh marshal logito pcache ht pos-tip flycheck flx org-plus-contrib magit magit-popup git-commit with-editor smartparens iedit anzu evil goto-chg undo-tree diminish company hydra inflections edn multiple-cursors paredit peg eval-sexp-fu highlight cider spinner queue pkg-info clojure-mode epl bind-map bind-key seq yasnippet packed anaconda-mode pythonic f dash s ace-window helm avy helm-core async auto-complete popup request color-theme-sanityinc-tomorrow yasnippet-snippets yapfify xterm-color ws-butler writeroom-mode winum which-key volatile-highlights virtualenvwrapper vi-tilde-fringe uuidgen use-package unfill toc-org symon string-inflection solarized-theme smeargle smart-mode-line shell-pop sayid reveal-in-osx-finder restart-emacs rainbow-delimiters pyvenv pytest pyenv-mode py-isort popwin pip-requirements persp-mode pcre2el pbcopy password-generator paradox osx-trash osx-dictionary orgit org-projectile org-present org-pomodoro org-download org-bullets org-brain open-junk-file neotree mwim multi-term move-text mmm-mode mic-paren markdown-toc magit-gitflow magit-gh-pulls macrostep lorem-ipsum live-py-mode lispy linum-relative link-hint launchctl interleave info+ indent-guide ibuffer-projectile hy-mode hungry-delete htmlize hl-todo highlight-parentheses highlight-numbers highlight-indentation hide-comnt help-fns+ helm-themes helm-swoop helm-pydoc helm-purpose helm-projectile helm-mode-manager helm-make helm-gitignore helm-flx helm-descbinds helm-company helm-c-yasnippet helm-ag google-translate golden-ratio gnuplot github-search github-clone gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link git-gutter-fringe git-gutter-fringe+ gist gh-md geeknote fuzzy fullframe flycheck-pos-tip flx-ido fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-search-highlight-persist evil-org evil-numbers evil-mc evil-matchit evil-magit evil-lisp-state evil-lion evil-indent-plus evil-iedit-state evil-exchange evil-escape evil-ediff evil-commentary evil-args evil-anzu eshell-z eshell-prompt-extras esh-help elisp-slime-nav editorconfig dumb-jump diff-hl deft cython-mode company-statistics company-anaconda column-enforce-mode clojure-snippets clj-refactor clean-aindent-mode cider-eval-sexp-fu browse-at-remote beacon auto-yasnippet auto-highlight-symbol auto-compile aggressive-indent adaptive-wrap ace-link ace-jump-helm-line ac-ispell 4clojure))))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
+)
