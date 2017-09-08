@@ -76,7 +76,7 @@ values."
                                       yasnippet-snippets
                                       interleave
                                       beacon
-                                      smart-mode-line
+                                      ;;smart-mode-line
                                       lispy
                                       4clojure
                                       org-projectile
@@ -86,7 +86,7 @@ values."
    ;; A list of packages that cannot be updated.
    dotspacemacs-frozen-packages '()
    ;; A list of packages that will not be installed and loaded.
-   dotspacemacs-excluded-packages '(spaceline)
+   dotspacemacs-excluded-packages '()
    ;; Defines the behaviour of Spacemacs when installing packages.
    ;; Possible values are `used-only', `used-but-keep-unused' and `all'.
    ;; `used-only' installs only explicitly used packages and uninstall any
@@ -156,7 +156,7 @@ values."
    ;; List of themes, the first of the list is loaded when spacemacs starts.
    ;; Press <SPC> T n to cycle to the next theme in the list (works great
    ;; with 2 themes variants, one dark and one light)
-   dotspacemacs-themes '(solarized-light
+   dotspacemacs-themes '(sanityinc-tomorrow-night
                          leuven)
 
    dotspacemacs-colorize-cursor-according-to-state t
@@ -386,10 +386,10 @@ you should place your code here."
 
   (setq dotspacemacs-autosave-file-directly t)
 
-  (setq sml/no-confirm-load-theme t)
-  (sml/setup)
+  ;;(setq sml/no-confirm-load-theme t)
+  ;;(sml/setup)
   (beacon-mode 1)
-  (color-theme-sanityinc-tomorrow-night)
+  ;; (color-theme-sanityinc-tomorrow-night)
   (setq sentence-end-double-space nil)
   (setq vc-follow-symlinks t)
 
@@ -807,7 +807,7 @@ This function is called at the very end of Spacemacs initialization."
  '(evil-want-Y-yank-to-eol nil)
  '(package-selected-packages
    (quote
-    (visual-fill-column rich-minority org-category-capture alert log4e gntp markdown-mode zoutline swiper ivy dash-functional parent-mode window-purpose imenu-list projectile gitignore-mode fringe-helper git-gutter+ git-gutter gh marshal logito pcache ht pos-tip flycheck flx org-plus-contrib magit magit-popup git-commit with-editor smartparens iedit anzu evil goto-chg undo-tree diminish company hydra inflections edn multiple-cursors paredit peg eval-sexp-fu highlight cider spinner queue pkg-info clojure-mode epl bind-map bind-key seq yasnippet packed anaconda-mode pythonic f dash s ace-window helm avy helm-core async auto-complete popup request color-theme-sanityinc-tomorrow yasnippet-snippets yapfify xterm-color ws-butler writeroom-mode winum which-key volatile-highlights virtualenvwrapper vi-tilde-fringe uuidgen use-package unfill toc-org symon string-inflection solarized-theme smeargle smart-mode-line shell-pop sayid reveal-in-osx-finder restart-emacs rainbow-delimiters pyvenv pytest pyenv-mode py-isort popwin pip-requirements persp-mode pcre2el pbcopy password-generator paradox osx-trash osx-dictionary orgit org-projectile org-present org-pomodoro org-download org-bullets org-brain open-junk-file neotree mwim multi-term move-text mmm-mode mic-paren markdown-toc magit-gitflow magit-gh-pulls macrostep lorem-ipsum live-py-mode lispy linum-relative link-hint launchctl interleave info+ indent-guide ibuffer-projectile hy-mode hungry-delete htmlize hl-todo highlight-parentheses highlight-numbers highlight-indentation hide-comnt help-fns+ helm-themes helm-swoop helm-pydoc helm-purpose helm-projectile helm-mode-manager helm-make helm-gitignore helm-flx helm-descbinds helm-company helm-c-yasnippet helm-ag google-translate golden-ratio gnuplot github-search github-clone gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link git-gutter-fringe git-gutter-fringe+ gist gh-md geeknote fuzzy fullframe flycheck-pos-tip flx-ido fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-search-highlight-persist evil-org evil-numbers evil-mc evil-matchit evil-magit evil-lisp-state evil-lion evil-indent-plus evil-iedit-state evil-exchange evil-escape evil-ediff evil-commentary evil-args evil-anzu eshell-z eshell-prompt-extras esh-help elisp-slime-nav editorconfig dumb-jump diff-hl deft cython-mode company-statistics company-anaconda column-enforce-mode clojure-snippets clj-refactor clean-aindent-mode cider-eval-sexp-fu browse-at-remote beacon auto-yasnippet auto-highlight-symbol auto-compile aggressive-indent adaptive-wrap ace-link ace-jump-helm-line ac-ispell 4clojure))))
+    (spaceline powerline rainbow-mode rainbow-identifiers color-identifiers-mode visual-fill-column rich-minority org-category-capture alert log4e gntp markdown-mode zoutline swiper ivy dash-functional parent-mode window-purpose imenu-list projectile gitignore-mode fringe-helper git-gutter+ git-gutter gh marshal logito pcache ht pos-tip flycheck flx org-plus-contrib magit magit-popup git-commit with-editor smartparens iedit anzu evil goto-chg undo-tree diminish company hydra inflections edn multiple-cursors paredit peg eval-sexp-fu highlight cider spinner queue pkg-info clojure-mode epl bind-map bind-key seq yasnippet packed anaconda-mode pythonic f dash s ace-window helm avy helm-core async auto-complete popup request color-theme-sanityinc-tomorrow yasnippet-snippets yapfify xterm-color ws-butler writeroom-mode winum which-key volatile-highlights virtualenvwrapper vi-tilde-fringe uuidgen use-package unfill toc-org symon string-inflection solarized-theme smeargle smart-mode-line shell-pop sayid reveal-in-osx-finder restart-emacs rainbow-delimiters pyvenv pytest pyenv-mode py-isort popwin pip-requirements persp-mode pcre2el pbcopy password-generator paradox osx-trash osx-dictionary orgit org-projectile org-present org-pomodoro org-download org-bullets org-brain open-junk-file neotree mwim multi-term move-text mmm-mode mic-paren markdown-toc magit-gitflow magit-gh-pulls macrostep lorem-ipsum live-py-mode lispy linum-relative link-hint launchctl interleave info+ indent-guide ibuffer-projectile hy-mode hungry-delete htmlize hl-todo highlight-parentheses highlight-numbers highlight-indentation hide-comnt help-fns+ helm-themes helm-swoop helm-pydoc helm-purpose helm-projectile helm-mode-manager helm-make helm-gitignore helm-flx helm-descbinds helm-company helm-c-yasnippet helm-ag google-translate golden-ratio gnuplot github-search github-clone gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link git-gutter-fringe git-gutter-fringe+ gist gh-md geeknote fuzzy fullframe flycheck-pos-tip flx-ido fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-search-highlight-persist evil-org evil-numbers evil-mc evil-matchit evil-magit evil-lisp-state evil-lion evil-indent-plus evil-iedit-state evil-exchange evil-escape evil-ediff evil-commentary evil-args evil-anzu eshell-z eshell-prompt-extras esh-help elisp-slime-nav editorconfig dumb-jump diff-hl deft cython-mode company-statistics company-anaconda column-enforce-mode clojure-snippets clj-refactor clean-aindent-mode cider-eval-sexp-fu browse-at-remote beacon auto-yasnippet auto-highlight-symbol auto-compile aggressive-indent adaptive-wrap ace-link ace-jump-helm-line ac-ispell 4clojure))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
