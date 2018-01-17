@@ -81,14 +81,10 @@ values."
                                       easy-hugo
                                       fullframe
                                       writeroom-mode
-                                      eterm-256color
                                       eshell-prompt-extras
                                       org-journal
                                       mic-paren
-                                      solarized-theme
-                                      color-theme-sanityinc-tomorrow
                                       yasnippet-snippets
-                                      interleave
                                       beacon
                                       lispy
                                       org-projectile
@@ -168,7 +164,7 @@ values."
    ;; List of themes, the first of the list is loaded when spacemacs starts.
    ;; Press <SPC> T n to cycle to the next theme in the list (works great
    ;; with 2 themes variants, one dark and one light)
-   dotspacemacs-themes '(sanityinc-tomorrow-night
+   dotspacemacs-themes '(gruvbox
                          leuven)
 
    dotspacemacs-colorize-cursor-according-to-state t
@@ -455,10 +451,6 @@ you should place your code here."
   ;;:fe(jsn/configure-eshell)
   (jsn/configure-org-mode)
 
-  (setq explicit-shell-file-name "/usr/local/bin/fish")
-  (setq shell-file-name "fish")
-  (setq explicit-bash.exe-args '("--noediting" "--login" "-i"))
-  (setenv "SHELL" shell-file-name)
   (add-hook 'comint-output-filter-functions 'comint-strip-ctrl-m)
   (global-set-key [f1] 'shell)
 
@@ -480,8 +472,6 @@ you should place your code here."
   ;; use the default location (`~/.virtualenvs`), or if the
   ;; the environment variable `WORKON_HOME` points to the right place
   (setq venv-location "/Users/jasongraham/.local/share/virtualenvs")
-  (setq multi-term-program "/bin/bash")
-
 )
 
 
