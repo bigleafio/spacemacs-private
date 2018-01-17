@@ -32,7 +32,9 @@ values."
    dotspacemacs-configuration-layer-path '()
    ;; List of configuration layers to load.
    dotspacemacs-configuration-layers
-   '(
+   '(html
+     ansible
+     rust
      helm
      evil-commentary
      auto-completion
@@ -40,35 +42,47 @@ values."
      clojure
      (python :variables
              python-sort-imports-on-save t
+             python-enable-yapf-format-on-save t
              python-test-runner 'pytest)
 
      emacs-lisp
      evernote
      deft
      osx
-     ;;mu4e
      better-defaults
      (git :variables git-gutter-use-fringe t)
+     (version-control :variables
+                      version-control-diff-tool 'diff-hl
+                      version-control-diff-tool 'diff-hl)
      github
      markdown
      (org variables: org-enable-github-support nil)
-     ;;(colors :variables
-     ;;         colors-enable-nyan-cat-progress-bar t )
-     ;;(restclient :variables
-     ;;            restclient-use-org t)
+     (colors :variables
+              colors-enable-nyan-cat-progress-bar t )
+     (restclient :variables
+                 restclient-use-org t)
      syntax-checking
+     themes-megapack
      (shell :variables
+            shell-enable-smart-eshell t
             shell-default-shell 'multi-term
+            multi-term-program "/usr/local/bin/fish"
             shell-default-height 30
-            shell-default-position 'bottom)
+            shell-default-position 'bottom
+            shell-default-term-shell "/usr/local/bin/fish"
+            shell-protect-eshell-prompt nil
+            )
      )
    ;; List of additional packages that will be installed without being
    ;; wrapped in a layer. If you need some configuration for these
    ;; packages, then consider creating a layer. You can also put the
    ;; configuration in `dotspacemacs/user-config'.
    dotspacemacs-additional-packages '(
+                                      easy-hugo
                                       fullframe
                                       writeroom-mode
+                                      eterm-256color
+                                      eshell-prompt-extras
                                       org-journal
                                       mic-paren
                                       solarized-theme
@@ -76,9 +90,7 @@ values."
                                       yasnippet-snippets
                                       interleave
                                       beacon
-                                      ;;smart-mode-line
                                       lispy
-                                      4clojure
                                       org-projectile
                                       undo-tree
                                       virtualenvwrapper        ; Python environment management
@@ -162,7 +174,7 @@ values."
    dotspacemacs-colorize-cursor-according-to-state t
    ;; Default font, or prioritized list of fonts. `powerline-scale' allows to
    ;; quickly tweak the mode-line size to make separators look not too crappy.
-   dotspacemacs-default-font '("Hack"
+   dotspacemacs-default-font '("Source Code Pro"
                                :size 13
                                :weight normal
                                :width normal
@@ -264,7 +276,7 @@ values."
    ;; If non nil the frame is maximized when Emacs starts up.
    ;; Takes effect only if `dotspacemacs-fullscreen-at-startup' is nil.
    ;; (default nil) (Emacs 24.4+ only)
-   dotspacemacs-maximized-at-startup nil
+   dotspacemacs-maximized-at-startup t
    ;; A value from the range (0..100), in increasing opacity, which describes
    ;; the transparency level of a frame when it's active or selected.
    ;; Transparency can be toggled through `toggle-transparency'. (default 90)
@@ -392,7 +404,7 @@ you should place your code here."
   ;; (color-theme-sanityinc-tomorrow-night)
   (setq sentence-end-double-space nil)
   (setq vc-follow-symlinks t)
-
+  (add-to-list 'auto-mode-alist '("\\.boot\\'" . clojure-mode))
   (setq open-junk-file-format "~/Dropbox/Documents/Organizer/Scratch/%Y/%m/%d-%H%M%S.")
   (setq deft-directory "~/Dropbox/Documents/Organizer/Notes"
         deft-use-filter-string-for-filename t
@@ -400,6 +412,8 @@ you should place your code here."
         deft-extensions '("txt" "md" "org")
         deft-text-mode 'org-mode)
 
+  (add-to-list 'comint-output-filter-functions 'ansi-color-process-output)
+  (ansi-color-for-comint-mode-on)
   (setq user-full-name "Jason Graham"
         user-mail-address "jgraham20@gmail.com")
 
@@ -425,16 +439,51 @@ you should place your code here."
   (setq paren-match-face 'mode-line)
 
   (menu-bar-mode 1)
-
+  (add-hook 'term-mode-hook 'toggle-truncate-lines)
   (setq neo-smart-open t)
   (setq projectile-switch-project-action 'neotree-projectile-action)
 
+  ;; Main blog
+  (setq easy-hugo-basedir "~/Dropbox/Documents/bigleaf.io/")
+  (setq easy-hugo-url "https://bigleaf.io")
+  (setq easy-hugo-root "/usr/local/bin/hugo")
+  (setq easy-hugo-previewtime "300")
+
   ;;(jsn/gnus)
   (jsn/mail)
-  (jsn/configure-eshell)
+  ;;(jsn/shell)
+  ;;:fe(jsn/configure-eshell)
   (jsn/configure-org-mode)
 
+  (setq explicit-shell-file-name "/usr/local/bin/fish")
+  (setq shell-file-name "fish")
+  (setq explicit-bash.exe-args '("--noediting" "--login" "-i"))
+  (setenv "SHELL" shell-file-name)
+  (add-hook 'comint-output-filter-functions 'comint-strip-ctrl-m)
+  (global-set-key [f1] 'shell)
+
+  (with-eval-after-load "esh-opt"
+    (autoload 'epe-theme-lambda "eshell-prompt-extras")
+    (setq eshell-highlight-prompt nil
+          eshell-prompt-function 'epe-theme-lambda))
+
+  (with-eval-after-load "esh-opt"
+    (require 'virtualenvwrapper)
+    (venv-initialize-eshell)
+    (autoload 'epe-theme-lambda "eshell-prompt-extras")
+    (setq eshell-highlight-prompt nil
+          eshell-prompt-function 'epe-theme-lambda))
+
+  (venv-initialize-interactive-shells) ;; if you want interactive shell support
+  (venv-initialize-eshell) ;; if you want eshell support
+  ;; note that setting `venv-location` is not necessary if you
+  ;; use the default location (`~/.virtualenvs`), or if the
+  ;; the environment variable `WORKON_HOME` points to the right place
+  (setq venv-location "/Users/jasongraham/.local/share/virtualenvs")
+  (setq multi-term-program "/bin/bash")
+
 )
+
 
 (defun endless/4clojure-check-and-proceed ()
   "Check the answer and show the next question if it worked."
@@ -558,7 +607,6 @@ you should place your code here."
 
 ;;;; Shell
 (defun jsn/shell ()
-  "Quick eshell with vim interaction."
 
   (defun my-spacemacs/shell-pop-eshell ()
     (interactive)
@@ -611,8 +659,8 @@ you should place your code here."
            (esh-dir-section (abbreviate-file-name (eshell/pwd)))
            (esh-dir-face nil)
 
-           (esh-git-section (magit-get-current-branch))
-           (esh-git-face nil)
+           ;;(esh-git-section (magit-get-current-branch))
+           ;;(esh-git-face nil)
 
            (esh-venv-section pyvenv-virtual-env-name)
            (esh-venv-face nil)
@@ -635,7 +683,8 @@ you should place your code here."
                (-non-nil esh-sections))
        (set-eshell-prompt-icon esh-prompt esh-prompt-face))))
 
-  (setq eshell-prompt-function 'esh-prompt-function))
+  ;;(setq eshell-prompt-function 'esh-prompt-function))
+  )
 
 ;;;; Babel
 (defun module/org/babel ()
@@ -788,30 +837,3 @@ you should place your code here."
   (spacemacs/set-leader-keys (kbd "ab") 'deploy-blog)
   (spacemacs/set-leader-keys (kbd "aa") 'start-blog-server)
   (spacemacs/set-leader-keys (kbd "ae") 'end-blog-server))
-(defun dotspacemacs/emacs-custom-settings ()
-  "Emacs custom settings.
-This is an auto-generated function, do not modify its content directly, use
-Emacs customize menu instead.
-This function is called at the very end of Spacemacs initialization."
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(ansi-color-names-vector
-   ["#0a0814" "#f2241f" "#67b11d" "#b1951d" "#4f97d7" "#a31db1" "#28def0" "#b2b2b2"])
- '(custom-enabled-themes (quote (sanityinc-tomorrow-night)))
- '(custom-safe-themes
-   (quote
-    ("06f0b439b62164c6f8f84fdda32b62fb50b6d00e8b01c2208e55543a6337433a" default)))
- '(evil-want-Y-yank-to-eol nil)
- '(package-selected-packages
-   (quote
-    (spaceline powerline rainbow-mode rainbow-identifiers color-identifiers-mode visual-fill-column rich-minority org-category-capture alert log4e gntp markdown-mode zoutline swiper ivy dash-functional parent-mode window-purpose imenu-list projectile gitignore-mode fringe-helper git-gutter+ git-gutter gh marshal logito pcache ht pos-tip flycheck flx org-plus-contrib magit magit-popup git-commit with-editor smartparens iedit anzu evil goto-chg undo-tree diminish company hydra inflections edn multiple-cursors paredit peg eval-sexp-fu highlight cider spinner queue pkg-info clojure-mode epl bind-map bind-key seq yasnippet packed anaconda-mode pythonic f dash s ace-window helm avy helm-core async auto-complete popup request color-theme-sanityinc-tomorrow yasnippet-snippets yapfify xterm-color ws-butler writeroom-mode winum which-key volatile-highlights virtualenvwrapper vi-tilde-fringe uuidgen use-package unfill toc-org symon string-inflection solarized-theme smeargle smart-mode-line shell-pop sayid reveal-in-osx-finder restart-emacs rainbow-delimiters pyvenv pytest pyenv-mode py-isort popwin pip-requirements persp-mode pcre2el pbcopy password-generator paradox osx-trash osx-dictionary orgit org-projectile org-present org-pomodoro org-download org-bullets org-brain open-junk-file neotree mwim multi-term move-text mmm-mode mic-paren markdown-toc magit-gitflow magit-gh-pulls macrostep lorem-ipsum live-py-mode lispy linum-relative link-hint launchctl interleave info+ indent-guide ibuffer-projectile hy-mode hungry-delete htmlize hl-todo highlight-parentheses highlight-numbers highlight-indentation hide-comnt help-fns+ helm-themes helm-swoop helm-pydoc helm-purpose helm-projectile helm-mode-manager helm-make helm-gitignore helm-flx helm-descbinds helm-company helm-c-yasnippet helm-ag google-translate golden-ratio gnuplot github-search github-clone gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link git-gutter-fringe git-gutter-fringe+ gist gh-md geeknote fuzzy fullframe flycheck-pos-tip flx-ido fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-search-highlight-persist evil-org evil-numbers evil-mc evil-matchit evil-magit evil-lisp-state evil-lion evil-indent-plus evil-iedit-state evil-exchange evil-escape evil-ediff evil-commentary evil-args evil-anzu eshell-z eshell-prompt-extras esh-help elisp-slime-nav editorconfig dumb-jump diff-hl deft cython-mode company-statistics company-anaconda column-enforce-mode clojure-snippets clj-refactor clean-aindent-mode cider-eval-sexp-fu browse-at-remote beacon auto-yasnippet auto-highlight-symbol auto-compile aggressive-indent adaptive-wrap ace-link ace-jump-helm-line ac-ispell 4clojure))))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
-)
